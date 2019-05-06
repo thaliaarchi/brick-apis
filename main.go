@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
@@ -11,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/mrjones/oauth"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -22,48 +24,90 @@ type order struct {
 }
 
 func main() {
-	username, password, err := getCredentials()
+	username, password, consumerKey, consumerSecret, token, tokenSecret, err := getCredentials()
 	if err != nil {
 		log.Fatal(err)
 	}
-	createClient(username, password)
+
+	userClient, err := createUserClient(username, password)
+	if err != nil {
+		log.Fatal(err)
+	}
+	exists, err := checkOrderExist(userClient, 9999999)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Printf("Order 9999999 exists: %t\n", exists)
+
+	apiClient, err := createAPIClient(consumerKey, consumerSecret, token, tokenSecret)
+	resp, err := apiClient.Get("https://api.bricklink.com/api/store/v1/orders/9999999")
+	fmt.Println("Response:", resp.StatusCode, resp.Status)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		bodyString := string(bodyBytes)
+		log.Print(bodyString)
+	}
 }
 
-func getCredentials() (string, string, error) {
+func getCredentials() (string, string, string, string, string, string, error) {
 	username := os.Getenv("BRICKLINK_USERNAME")
 	if username == "" {
-		return "", "", errors.New("BRICKLINK_USERNAME environment variable must be set")
+		return "", "", "", "", "", "", errors.New("BRICKLINK_USERNAME environment variable must be set")
 	}
 	password := os.Getenv("BRICKLINK_PASSWORD")
 	if password == "" {
-		return "", "", errors.New("BRICKLINK_PASSWORD environment variable must be set")
+		return "", "", "", "", "", "", errors.New("BRICKLINK_PASSWORD environment variable must be set")
 	}
-	return username, password, nil
+	consumerKey := os.Getenv("BRICKLINK_CONSUMER_KEY")
+	if consumerKey == "" {
+		return "", "", "", "", "", "", errors.New("BRICKLINK_CONSUMER_KEY environment variable must be set")
+	}
+	consumerSecret := os.Getenv("BRICKLINK_CONSUMER_SECRET")
+	if consumerSecret == "" {
+		return "", "", "", "", "", "", errors.New("BRICKLINK_CONSUMER_SECRET environment variable must be set")
+	}
+	token := os.Getenv("BRICKLINK_TOKEN")
+	if token == "" {
+		return "", "", "", "", "", "", errors.New("BRICKLINK_TOKEN environment variable must be set")
+	}
+	tokenSecret := os.Getenv("BRICKLINK_TOKEN_SECRET")
+	if tokenSecret == "" {
+		return "", "", "", "", "", "", errors.New("BRICKLINK_TOKEN_SECRET environment variable must be set")
+	}
+	return username, password, consumerKey, consumerSecret, token, tokenSecret, nil
 }
 
-func createClient(username, password string) http.Client {
-	options := cookiejar.Options{
+func createUserClient(username, password string) (*http.Client, error) {
+	jar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
-	}
-	jar, err := cookiejar.New(&options)
+	})
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	client := http.Client{Jar: jar}
-	fmt.Println("Logging in")
+	client := &http.Client{Jar: jar}
 	_, err = client.PostForm("https://www.bricklink.com/ajax/renovate/loginandout.ajax", url.Values{
 		"userid":          {username},
 		"password":        {password},
 		"keepme_loggedin": {"true"},
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Logged in")
-	return client
+	return client, err
 }
 
-func checkOrderExist(client http.Client, id int) (bool, error) {
+func createAPIClient(consumerKey, consumerSecret, token, tokenSecret string) (*http.Client, error) {
+	consumer := oauth.NewConsumer(consumerKey, consumerSecret, oauth.ServiceProvider{})
+	accessToken := &oauth.AccessToken{Token: token, Secret: tokenSecret}
+	return consumer.MakeHttpClient(accessToken)
+}
+
+func checkOrderExist(client *http.Client, id int) (bool, error) {
 	url := "https://www.bricklink.com/orderDetail.asp?ID=" + strconv.Itoa(id)
 	resp, err := client.Get(url)
 	if err != nil {
