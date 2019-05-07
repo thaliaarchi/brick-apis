@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -10,26 +11,27 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/mrjones/oauth"
 	"golang.org/x/net/publicsuffix"
 )
 
-var timeFormat = "2006/01/02 15:04:05"
-
-type order struct {
-	id   int
-	time time.Time
+type credentials struct {
+	Username       string
+	Password       string
+	ConsumerKey    string
+	ConsumerSecret string
+	Token          string
+	TokenSecret    string
 }
 
 func main() {
-	username, password, consumerKey, consumerSecret, token, tokenSecret, err := getCredentials()
+	cred, err := readCredentials("config.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	userClient, err := createUserClient(username, password)
+	userClient, err := createUserClient(cred)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,7 +41,7 @@ func main() {
 	}
 	log.Printf("Order 9999999 exists: %t\n", exists)
 
-	apiClient, err := createAPIClient(consumerKey, consumerSecret, token, tokenSecret)
+	apiClient, err := createAPIClient(cred)
 	resp, err := apiClient.Get("https://api.bricklink.com/api/store/v1/orders/9999999")
 	fmt.Println("Response:", resp.StatusCode, resp.Status)
 	if err != nil {
@@ -57,35 +59,39 @@ func main() {
 	}
 }
 
-func getCredentials() (string, string, string, string, string, string, error) {
-	username := os.Getenv("BRICKLINK_USERNAME")
-	if username == "" {
-		return "", "", "", "", "", "", errors.New("BRICKLINK_USERNAME environment variable must be set")
+func readCredentials(configFile string) (*credentials, error) {
+	file, err := os.Open(configFile)
+	if err != nil {
+		return nil, err
 	}
-	password := os.Getenv("BRICKLINK_PASSWORD")
-	if password == "" {
-		return "", "", "", "", "", "", errors.New("BRICKLINK_PASSWORD environment variable must be set")
+	decoder := json.NewDecoder(file)
+	cred := &credentials{}
+	err = decoder.Decode(cred)
+	if err != nil {
+		return nil, err
 	}
-	consumerKey := os.Getenv("BRICKLINK_CONSUMER_KEY")
-	if consumerKey == "" {
-		return "", "", "", "", "", "", errors.New("BRICKLINK_CONSUMER_KEY environment variable must be set")
+	if cred.Username == "" {
+		return nil, errors.New("Username configuration variable must be set")
 	}
-	consumerSecret := os.Getenv("BRICKLINK_CONSUMER_SECRET")
-	if consumerSecret == "" {
-		return "", "", "", "", "", "", errors.New("BRICKLINK_CONSUMER_SECRET environment variable must be set")
+	if cred.Password == "" {
+		return nil, errors.New("Password configuration variable must be set")
 	}
-	token := os.Getenv("BRICKLINK_TOKEN")
-	if token == "" {
-		return "", "", "", "", "", "", errors.New("BRICKLINK_TOKEN environment variable must be set")
+	if cred.ConsumerKey == "" {
+		return nil, errors.New("ConsumerKey configuration variable must be set")
 	}
-	tokenSecret := os.Getenv("BRICKLINK_TOKEN_SECRET")
-	if tokenSecret == "" {
-		return "", "", "", "", "", "", errors.New("BRICKLINK_TOKEN_SECRET environment variable must be set")
+	if cred.ConsumerSecret == "" {
+		return nil, errors.New("ConsumerSecret configuration variable must be set")
 	}
-	return username, password, consumerKey, consumerSecret, token, tokenSecret, nil
+	if cred.Token == "" {
+		return nil, errors.New("Token configuration variable must be set")
+	}
+	if cred.TokenSecret == "" {
+		return nil, errors.New("TokenSecret configuration variable must be set")
+	}
+	return cred, nil
 }
 
-func createUserClient(username, password string) (*http.Client, error) {
+func createUserClient(cred *credentials) (*http.Client, error) {
 	jar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})
@@ -94,16 +100,16 @@ func createUserClient(username, password string) (*http.Client, error) {
 	}
 	client := &http.Client{Jar: jar}
 	_, err = client.PostForm("https://www.bricklink.com/ajax/renovate/loginandout.ajax", url.Values{
-		"userid":          {username},
-		"password":        {password},
+		"userid":          {cred.Username},
+		"password":        {cred.Password},
 		"keepme_loggedin": {"true"},
 	})
 	return client, err
 }
 
-func createAPIClient(consumerKey, consumerSecret, token, tokenSecret string) (*http.Client, error) {
-	consumer := oauth.NewConsumer(consumerKey, consumerSecret, oauth.ServiceProvider{})
-	accessToken := &oauth.AccessToken{Token: token, Secret: tokenSecret}
+func createAPIClient(cred *credentials) (*http.Client, error) {
+	consumer := oauth.NewConsumer(cred.ConsumerKey, cred.ConsumerSecret, oauth.ServiceProvider{})
+	accessToken := &oauth.AccessToken{Token: cred.Token, Secret: cred.TokenSecret}
 	return consumer.MakeHttpClient(accessToken)
 }
 
