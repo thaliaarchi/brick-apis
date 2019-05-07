@@ -42,21 +42,9 @@ func main() {
 	log.Printf("Order 9999999 exists: %t\n", exists)
 
 	apiClient, err := createAPIClient(cred)
-	resp, err := apiClient.Get("https://api.bricklink.com/api/store/v1/orders/9999999")
-	fmt.Println("Response:", resp.StatusCode, resp.Status)
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		bodyString := string(bodyBytes)
-		log.Print(bodyString)
-	}
+	printResponse(getOrderDetails(apiClient, 9999999))
+	printResponse(searchWantedList(userClient, 0))
 }
 
 func readCredentials(configFile string) (*credentials, error) {
@@ -128,4 +116,38 @@ func checkOrderExist(client *http.Client, id int) (bool, error) {
 	} else {
 		return false, fmt.Errorf("unexpected URL: %v", finalURL)
 	}
+}
+
+func getOrderDetails(client *http.Client, id int) (*http.Response, error) {
+	url := "https://api.bricklink.com/api/store/v1/orders/" + strconv.Itoa(id)
+	return client.Get(url)
+}
+
+func searchWantedList(client *http.Client, id int) (*http.Response, error) {
+	url := "https://www.bricklink.com/ajax/clone/wanted/search2.ajax?wantedMoreID=" + strconv.Itoa(id)
+	return client.Get(url)
+}
+
+func printResponse(resp *http.Response, err error) {
+	fmt.Println("Response:", resp.StatusCode, resp.Status)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
+		str, err := responseToString(resp)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Print(str)
+	}
+}
+
+func responseToString(resp *http.Response) (string, error) {
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(bodyBytes), err
 }
