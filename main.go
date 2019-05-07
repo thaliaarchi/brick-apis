@@ -4,18 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/cookiejar"
-	"net/url"
 	"os"
-	"strconv"
-
-	"github.com/mrjones/oauth"
-	"golang.org/x/net/publicsuffix"
 )
 
+// credentials stores user account and OAuth api credentials
 type credentials struct {
 	Username       string
 	Password       string
@@ -30,21 +26,30 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	userClient, err := createUserClient(cred)
 	if err != nil {
 		log.Fatal(err)
 	}
-	exists, err := checkOrderExist(userClient, 9999999)
-	if err != nil {
-		log.Println(err)
-	}
-	log.Printf("Order 9999999 exists: %t\n", exists)
-
 	apiClient, err := createAPIClient(cred)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	printResponse(getOrderDetails(apiClient, 9999999))
-	printResponse(searchWantedList(userClient, 0))
+	resp, err := searchWantedList(userClient, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+	search, err := DecodeSearch(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, list := range search.Results.WantedLists {
+		resp, err := searchWantedList(userClient, list.ID)
+		writeResponse(resp, err, fmt.Sprintf("wl-%d.json", list.ID))
+	}
 }
 
 func readCredentials(configFile string) (*credentials, error) {
@@ -79,55 +84,6 @@ func readCredentials(configFile string) (*credentials, error) {
 	return cred, nil
 }
 
-func createUserClient(cred *credentials) (*http.Client, error) {
-	jar, err := cookiejar.New(&cookiejar.Options{
-		PublicSuffixList: publicsuffix.List,
-	})
-	if err != nil {
-		return nil, err
-	}
-	client := &http.Client{Jar: jar}
-	_, err = client.PostForm("https://www.bricklink.com/ajax/renovate/loginandout.ajax", url.Values{
-		"userid":          {cred.Username},
-		"password":        {cred.Password},
-		"keepme_loggedin": {"true"},
-	})
-	return client, err
-}
-
-func createAPIClient(cred *credentials) (*http.Client, error) {
-	consumer := oauth.NewConsumer(cred.ConsumerKey, cred.ConsumerSecret, oauth.ServiceProvider{})
-	accessToken := &oauth.AccessToken{Token: cred.Token, Secret: cred.TokenSecret}
-	return consumer.MakeHttpClient(accessToken)
-}
-
-func checkOrderExist(client *http.Client, id int) (bool, error) {
-	url := "https://www.bricklink.com/orderDetail.asp?ID=" + strconv.Itoa(id)
-	resp, err := client.Get(url)
-	if err != nil {
-		return false, err
-	}
-
-	finalURL := resp.Request.URL.String()
-	if finalURL == url || finalURL == "https://www.bricklink.com/oops.asp?err=403" {
-		return true, nil
-	} else if finalURL == "https://www.bricklink.com/notFound.asp?nf=order&mFolder=o&mSub=o" {
-		return false, nil
-	} else {
-		return false, fmt.Errorf("unexpected URL: %v", finalURL)
-	}
-}
-
-func getOrderDetails(client *http.Client, id int) (*http.Response, error) {
-	url := "https://api.bricklink.com/api/store/v1/orders/" + strconv.Itoa(id)
-	return client.Get(url)
-}
-
-func searchWantedList(client *http.Client, id int) (*http.Response, error) {
-	url := "https://www.bricklink.com/ajax/clone/wanted/search2.ajax?wantedMoreID=" + strconv.Itoa(id)
-	return client.Get(url)
-}
-
 func printResponse(resp *http.Response, err error) {
 	fmt.Println("Response:", resp.StatusCode, resp.Status)
 	if err != nil {
@@ -142,6 +98,21 @@ func printResponse(resp *http.Response, err error) {
 		}
 		log.Print(str)
 	}
+}
+
+func writeResponse(resp *http.Response, err error, fileName string) {
+	fmt.Println("Response:", resp.StatusCode, resp.Status)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer resp.Body.Close()
+	file, err := os.Create(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	io.Copy(file, resp.Body)
 }
 
 func responseToString(resp *http.Response) (string, error) {
