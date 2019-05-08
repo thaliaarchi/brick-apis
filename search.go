@@ -55,26 +55,26 @@ type WantedList struct {
 }
 
 type WantedItem struct {
-	WantedID          int64        `json:"wantedID"`
-	WantedMoreID      int64        `json:"wantedMoreID"`
-	WantedMoreName    string       `json:"wantedMoreName"`
-	ItemNo            string       `json:"itemNo"`
-	ItemID            int64        `json:"itemID"`
-	ItemSeq           int64        `json:"itemSeq"`
-	ItemName          string       `json:"itemName"`
-	ItemType          ItemType     `json:"itemType"`
-	ItemBrand         int64        `json:"itemBrand"`
-	ImageURL          string       `json:"imgURL"`
-	WantedQty         int64        `json:"wantedQty"`
-	WantedQtyFilled   int64        `json:"wantedQtyFilled"`
-	WantedNew         WantedNew    `json:"wantedNew"`
-	WantedNotify      WantedNotify `json:"wantedNotify"`
-	WantedRemark      *string      `json:"wantedRemark"`
-	WantedPrice       float64      `json:"wantedPrice"`
-	FormatWantedPrice string       `json:"formatWantedPrice"`
-	ColorID           int64        `json:"colorID"`
-	ColorName         string       `json:"colorName"`
-	ColorHex          string       `json:"colorHex"`
+	WantedID          int64           `json:"wantedID"`
+	WantedListID      int64           `json:"wantedMoreID"`
+	WantedListName    string          `json:"wantedMoreName"`
+	ItemNo            string          `json:"itemNo"`
+	ItemID            int64           `json:"itemID"`
+	ItemSeq           int64           `json:"itemSeq"`
+	ItemName          string          `json:"itemName"`
+	ItemType          ItemType        `json:"itemType"`
+	ItemBrand         int64           `json:"itemBrand"`
+	ImageURL          string          `json:"imgURL"`
+	WantedQty         int64           `json:"wantedQty"`
+	WantedQtyFilled   int64           `json:"wantedQtyFilled"`
+	WantedCondition   WantedCondition `json:"wantedNew"`
+	WantedNotify      WantedNotify    `json:"wantedNotify"`
+	WantedRemark      *string         `json:"wantedRemark"`
+	WantedPrice       float64         `json:"wantedPrice"`
+	FormatWantedPrice string          `json:"formatWantedPrice"`
+	ColorID           int64           `json:"colorID"`
+	ColorName         string          `json:"colorName"`
+	ColorHex          string          `json:"colorHex"`
 }
 
 type WantedListInfo struct {
@@ -87,16 +87,19 @@ type WantedListInfo struct {
 }
 
 type ItemType string
-type WantedNew string
+type WantedCondition string
 type WantedNotify string
 
 const (
-	TypeG         ItemType     = "G"
-	TypeM         ItemType     = "M"
-	TypeP         ItemType     = "P"
-	TypeS         ItemType     = "S"
-	WantedNewN    WantedNew    = "N"
-	WantedNewX    WantedNew    = "X"
-	WantedNotifyN WantedNotify = "N"
-	WantedNotifyY WantedNotify = "Y"
+	ItemTypeSet         ItemType        = "S"
+	ItemTypePart        ItemType        = "P"
+	ItemTypeMinifig     ItemType        = "M"
+	ItemTypeBook        ItemType        = "B"
+	ItemTypeGear        ItemType        = "G"
+	ItemTypeCatalog     ItemType        = "C"
+	WantedConditionAny  WantedCondition = "X"
+	WantedConditionNew  WantedCondition = "N"
+	WantedConditionUsed WantedCondition = "U"
+	WantedNotifyYes     WantedNotify    = "Y"
+	WantedNotifyNo      WantedNotify    = "N"
 )
