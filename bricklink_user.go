@@ -14,7 +14,7 @@ const (
 	cloneBase    = "https://www.bricklink.com/ajax/clone"
 )
 
-func createUserClient(cred *credentials) (*http.Client, error) {
+func createBLUserClient(cred *credentials) (*http.Client, error) {
 	jar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})

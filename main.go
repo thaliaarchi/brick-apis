@@ -26,17 +26,17 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	userClient, err := createUserClient(cred)
+	blUserClient, err := createBLUserClient(cred)
 	if err != nil {
 		log.Fatal(err)
 	}
-	apiClient, err := createAPIClient(cred)
+	blStoreClient, err := createBLStoreClient(cred)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	printResponse(getOrderDetails(apiClient, 9999999))
-	resp, err := searchWantedList(userClient, 0)
+	printResponse(getOrderDetails(blStoreClient, 9999999))
+	resp, err := searchWantedList(blUserClient, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func main() {
 	}
 
 	for _, list := range search.Results.WantedLists {
-		resp, err := searchWantedList(userClient, list.ID)
+		resp, err := searchWantedList(blUserClient, list.ID)
 		writeResponse(resp, err, fmt.Sprintf("wl-%d.json", list.ID))
 	}
 }
