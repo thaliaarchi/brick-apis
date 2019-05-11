@@ -45,19 +45,34 @@ func main() {
 	}
 
 	printResponse(getOrderDetails(blStoreClient, 9999999))
+
 	resp, err := searchWantedList(blUserClient, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer resp.Body.Close()
-	search, err := DecodeSearch(resp.Body)
+	var search Search
+	err = decodeAndWrite(resp.Body, &search, "wl-0.json")
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println(search)
 
 	for _, list := range search.Results.WantedLists {
+		if list.ID == 0 {
+			continue
+		}
 		resp, err := searchWantedList(blUserClient, list.ID)
-		writeResponse(resp, err, fmt.Sprintf("wl-%d.json", list.ID))
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer resp.Body.Close()
+		var s Search
+		err = decodeAndWrite(resp.Body, &s, fmt.Sprintf("wl-%d.json", list.ID))
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(s)
 	}
 }
 
@@ -136,4 +151,48 @@ func responseToString(resp *http.Response) (string, error) {
 		return "", err
 	}
 	return string(bodyBytes), err
+}
+
+func decodeAndWrite(r io.Reader, v interface{}, fileName string) error {
+	file, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	pr, pw := io.Pipe()
+	tr := io.TeeReader(r, pw)
+
+	done := make(chan bool)
+	errs := make(chan error)
+	defer close(done)
+
+	go func() {
+		defer pw.Close()
+		if _, err := io.Copy(file, tr); err != nil {
+			errs <- err
+		}
+		done <- true
+	}()
+
+	go func() {
+		decoder := json.NewDecoder(pr)
+		if err := decoder.Decode(&v); err != nil {
+			errs <- err
+		}
+		done <- true
+	}()
+
+	<-done
+	<-done
+	close(errs)
+	err = nil
+	for e := range errs {
+		if err == nil {
+			err = e
+		} else {
+			err = fmt.Errorf("%s\n%s", err, e)
+		}
+	}
+	return err
 }
