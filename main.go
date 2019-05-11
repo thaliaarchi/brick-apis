@@ -19,6 +19,8 @@ type credentials struct {
 	ConsumerSecret string
 	Token          string
 	TokenSecret    string
+	Age            string
+	CountryCode    string
 }
 
 func main() {
@@ -26,6 +28,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	sets := []string{"75192", "71043", "10256", "2000409", "70620"}
+	for _, set := range sets {
+		resp, err := getBricksAndPiecesProduct(cred, set)
+		writeResponse(resp, err, fmt.Sprintf("set-%s.json", set))
+	}
+
 	blUserClient, err := createBLUserClient(cred)
 	if err != nil {
 		log.Fatal(err)
@@ -80,6 +89,12 @@ func readCredentials(configFile string) (*credentials, error) {
 	}
 	if cred.TokenSecret == "" {
 		return nil, errors.New("TokenSecret configuration variable must be set")
+	}
+	if cred.Age == "" {
+		return nil, errors.New("Age configuration variable must be set")
+	}
+	if cred.CountryCode == "" {
+		return nil, errors.New("CountryCode configuration variable must be set")
 	}
 	return cred, nil
 }

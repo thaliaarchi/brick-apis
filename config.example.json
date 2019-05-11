@@ -4,5 +4,7 @@
   "ConsumerKey":    "<BrickLink API consumer key>",
   "ConsumerSecret": "<BrickLink API consumer secret>",
   "Token":          "<BrickLink API token value>",
-  "TokenSecret":    "<BrickLink API token secret>"
+  "TokenSecret":    "<BrickLink API token secret>",
+  "Age":            "18",
+  "CountryCode":    "US"
 }
