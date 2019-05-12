@@ -17,28 +17,38 @@ func createBLStoreClient(cred *credentials) (*http.Client, error) {
 	return consumer.MakeHttpClient(accessToken)
 }
 
-func getOrders(client *http.Client) (*OrderListResponse, error) {
-	resp, err := client.Get(apiBase + "/orders?direction=out")
-	printResponseCode("Orders", resp)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+func getOrderList(client *http.Client) (*OrderListResponse, error) {
+	url := apiBase + "/orders?direction=out"
 	var orders OrderListResponse
-	err = decodeAndWrite(resp.Body, &orders, "orders.json")
-	return &orders, err
+	return &orders, doBLStoreRequest(client, url, "Orders", "orders.json", &orders)
 }
 
-func getOrderDetails(client *http.Client, id int64) (*OrderResponse, error) {
-	resp, err := client.Get(fmt.Sprintf(apiBase+"/orders/%d", id))
-	printResponseCode(fmt.Sprintf("Order %d", id), resp)
+func getOrder(client *http.Client, id int64) (*OrderResponse, error) {
+	url := fmt.Sprintf(apiBase+"/orders/%d", id)
+	var order OrderResponse
+	return &order, doBLStoreRequest(client, url, fmt.Sprintf("Order %d", id), fmt.Sprintf("order-%d.json", id), &order)
+}
+
+func getColorList(client *http.Client) (*ColorListResponse, error) {
+	url := apiBase + "/colors"
+	var colors ColorListResponse
+	return &colors, doBLStoreRequest(client, url, "Colors", "colors.json", &colors)
+}
+
+func getColor(client *http.Client, id int64) (*ColorResponse, error) {
+	url := fmt.Sprintf(apiBase+"/colors/%d", id)
+	var color ColorResponse
+	return &color, doBLStoreRequest(client, url, fmt.Sprintf("Color %d", id), fmt.Sprintf("color-%d.json", id), &color)
+}
+
+func doBLStoreRequest(client *http.Client, url, tag, fileName string, v interface{}) error {
+	resp, err := client.Get(url)
+	printResponseCode(tag, resp)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
-	var order OrderResponse
-	err = decodeAndWrite(resp.Body, &order, fmt.Sprintf("order-%d.json", id))
-	return &order, err
+	return decodeAndWrite(resp.Body, v, fileName)
 }
 
 func (r *OrderListResponse) printUnknownValues() {
@@ -86,6 +96,16 @@ type OrderListResponse struct {
 type OrderResponse struct {
 	Meta  Meta  `json:"meta"`
 	Order Order `json:"data"`
+}
+
+type ColorListResponse struct {
+	Meta   Meta    `json:"meta"`
+	Colors []Color `json:"data"`
+}
+
+type ColorResponse struct {
+	Meta  Meta  `json:"meta"`
+	Color Color `json:"data"`
 }
 
 type Order struct {
@@ -157,6 +177,14 @@ type Cost struct {
 	VATAmount    string       `json:"vat_amount,omitempty"` // not in order list
 }
 
+// http://apidev.bricklink.com/redmine/projects/bricklink-api/wiki/ColorResource
+type Color struct {
+	ColorID   int64     `json:"color_id"`   // ID of the color
+	ColorName string    `json:"color_name"` // The name of the color
+	ColorCode string    `json:"color_code"` // HTML color code of this color
+	ColorType ColorType `json:"color_type"` // The name of the color group to which this color belongs
+}
+
 type Meta struct {
 	Description string `json:"description"`
 	Message     string `json:"message"`
@@ -167,19 +195,30 @@ type OrderStatus string
 type PaymentStatus string
 type PaymentMethod string
 type CurrencyCode string
+type ColorType string
 
 const (
-	OrderCompleted      OrderStatus   = "COMPLETED"
-	OrderReceived       OrderStatus   = "RECEIVED"
-	OrderPurged         OrderStatus   = "PURGED"
-	PaymentCompleted    PaymentStatus = "Completed"
-	PaymentReceived     PaymentStatus = "Received"
-	PaymentNone         PaymentStatus = "None"
-	PaymentSent         PaymentStatus = "Sent"
-	PaymentPayPal       PaymentMethod = "PayPal"
-	PaymentPayPalOnsite PaymentMethod = "PayPal (Onsite)"
-	CurrencyCad         CurrencyCode  = "CAD"
-	CurrencyEur         CurrencyCode  = "EUR"
-	CurrencyHuf         CurrencyCode  = "HUF"
-	CurrencyUsd         CurrencyCode  = "USD"
+	OrderCompleted       OrderStatus   = "COMPLETED"
+	OrderReceived        OrderStatus   = "RECEIVED"
+	OrderPurged          OrderStatus   = "PURGED"
+	PaymentCompleted     PaymentStatus = "Completed"
+	PaymentReceived      PaymentStatus = "Received"
+	PaymentNone          PaymentStatus = "None"
+	PaymentSent          PaymentStatus = "Sent"
+	PaymentPayPal        PaymentMethod = "PayPal"
+	PaymentPayPalOnsite  PaymentMethod = "PayPal (Onsite)"
+	CurrencyCad          CurrencyCode  = "CAD"
+	CurrencyEur          CurrencyCode  = "EUR"
+	CurrencyHuf          CurrencyCode  = "HUF"
+	CurrencyUsd          CurrencyCode  = "USD"
+	ColorTypeBrickArms   ColorType     = "BrickArms"
+	ColorTypeChrome      ColorType     = "Chrome"
+	ColorTypeGlitter     ColorType     = "Glitter"
+	ColorTypeMetallic    ColorType     = "Metallic"
+	ColorTypeMilky       ColorType     = "Milky"
+	ColorTypeModulex     ColorType     = "Modulex"
+	ColorTypePearl       ColorType     = "Pearl"
+	ColorTypeSolid       ColorType     = "Solid"
+	ColorTypeSpeckle     ColorType     = "Speckle"
+	ColorTypeTransparent ColorType     = "Transparent"
 )

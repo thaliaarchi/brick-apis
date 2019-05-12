@@ -44,25 +44,36 @@ func main() {
 		log.Fatal(err)
 	}
 
-	part, err := getBricksAndPiecesPart(cred, "3024")
+	colors, err := getColorList(blStoreClient)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(part)
-	set, err := getBricksAndPiecesSet(cred, "75192")
-	if err != nil {
-		fmt.Println(err)
+	fmt.Println(colors)
+	for _, c := range colors.Colors {
+		color, err := getColor(blStoreClient, c.ColorID)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(color)
 	}
-	fmt.Println(set)
 
-	orders, err := getOrders(blStoreClient)
+	_, err = getBricksAndPiecesPart(cred, "3024")
+	if err != nil {
+		fmt.Println(err)
+	}
+	_, err = getBricksAndPiecesSet(cred, "75192")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	orders, err := getOrderList(blStoreClient)
 	if err != nil {
 		fmt.Println(err)
 	}
 	if orders != nil {
 		orders.printUnknownValues()
 		for _, o := range orders.Orders {
-			order, err := getOrderDetails(blStoreClient, o.OrderID)
+			order, err := getOrder(blStoreClient, o.OrderID)
 			if err != nil {
 				fmt.Println(err)
 			}

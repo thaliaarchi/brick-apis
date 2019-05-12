@@ -8,15 +8,15 @@ import (
 
 func getBricksAndPiecesPart(cred *credentials, id string) (*ProductInformation, error) {
 	url := "https://www.lego.com/en-US/service/rpservice/getitemordesign?itemordesignnumber=" + id + "&isSalesFlow=true"
-	return doLEGORequest(cred, url, fmt.Sprintf("part-%s.json", id))
+	return doLEGORequest(cred, url, fmt.Sprintf("Part %s", id), fmt.Sprintf("part-%s.json", id))
 }
 
 func getBricksAndPiecesSet(cred *credentials, id string) (*ProductInformation, error) {
 	url := "https://www.lego.com/en-US/service/rpservice/getproduct?productnumber=" + id + "&isSalesFlow=true"
-	return doLEGORequest(cred, url, fmt.Sprintf("set-%s.json", id))
+	return doLEGORequest(cred, url, fmt.Sprintf("Part %s", id), fmt.Sprintf("set-%s.json", id))
 }
 
-func doLEGORequest(cred *credentials, url, filename string) (*ProductInformation, error) {
+func doLEGORequest(cred *credentials, url, tag, fileName string) (*ProductInformation, error) {
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -24,13 +24,13 @@ func doLEGORequest(cred *credentials, url, filename string) (*ProductInformation
 	cookie := fmt.Sprintf(`csAgeAndCountry={"age":"%s","countrycode":"%s"}`, cred.Age, cred.CountryCode)
 	request.Header.Add("Cookie", cookie)
 	resp, err := http.DefaultClient.Do(request)
-	printResponseCode("Orders", resp)
+	printResponseCode(tag, resp)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 	var product ProductInformation
-	err = decodeAndWrite(resp.Body, &product, filename)
+	err = decodeAndWrite(resp.Body, &product, fileName)
 	return &product, err
 }
 
