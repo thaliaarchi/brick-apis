@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 // credentials stores user account and OAuth api credentials
@@ -24,11 +25,14 @@ type credentials struct {
 }
 
 func main() {
-	os.Mkdir("data", 0777)
+	os.Mkdir("data", 0755)
 
-	cred, err := readCredentials("config.json")
-	if err != nil {
-		log.Fatal(err)
+	cred, errs := readCredentials("config.json")
+	if len(errs) > 0 {
+		for _, err := range errs {
+			fmt.Println(err)
+		}
+		return
 	}
 
 	blUserClient, err := createBLUserClient(cred)
@@ -40,8 +44,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	resp, err := getBricksAndPiecesProduct(cred, "75192")
-	writeResponse(resp, err, "set-75192.json")
+	part, err := getBricksAndPiecesPart(cred, "3024")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(part)
+	set, err := getBricksAndPiecesSet(cred, "75192")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(set)
 
 	orders, err := getOrders(blStoreClient)
 	if err != nil {
@@ -60,7 +72,7 @@ func main() {
 		}
 	}
 
-	resp, err = searchWantedList(blUserClient, 0)
+	resp, err := searchWantedList(blUserClient, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,7 +82,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(search)
 
 	for _, list := range search.Results.WantedLists {
 		if list.ID == 0 {
@@ -86,46 +97,59 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(s)
 	}
 }
 
-func readCredentials(configFile string) (*credentials, error) {
+func readCredentials(configFile string) (*credentials, []error) {
 	file, err := os.Open(configFile)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
 	decoder := json.NewDecoder(file)
 	cred := &credentials{}
 	err = decoder.Decode(cred)
 	if err != nil {
-		return nil, err
+		return nil, []error{err}
 	}
+	var errs []error
 	if cred.Username == "" {
-		return nil, errors.New("Username configuration variable must be set")
+		errs = append(errs, errors.New("Username configuration variable must be set"))
 	}
 	if cred.Password == "" {
-		return nil, errors.New("Password configuration variable must be set")
+		errs = append(errs, errors.New("Password configuration variable must be set"))
 	}
 	if cred.ConsumerKey == "" {
-		return nil, errors.New("ConsumerKey configuration variable must be set")
+		errs = append(errs, errors.New("ConsumerKey configuration variable must be set"))
 	}
 	if cred.ConsumerSecret == "" {
-		return nil, errors.New("ConsumerSecret configuration variable must be set")
+		errs = append(errs, errors.New("ConsumerSecret configuration variable must be set"))
 	}
 	if cred.Token == "" {
-		return nil, errors.New("Token configuration variable must be set")
+		errs = append(errs, errors.New("Token configuration variable must be set"))
 	}
 	if cred.TokenSecret == "" {
-		return nil, errors.New("TokenSecret configuration variable must be set")
+		errs = append(errs, errors.New("TokenSecret configuration variable must be set"))
 	}
 	if cred.Age == "" {
-		return nil, errors.New("Age configuration variable must be set")
+		errs = append(errs, errors.New("Age configuration variable must be set"))
 	}
 	if cred.CountryCode == "" {
-		return nil, errors.New("CountryCode configuration variable must be set")
+		errs = append(errs, errors.New("CountryCode configuration variable must be set"))
 	}
-	return cred, nil
+	age, err := strconv.Atoi(cred.Age)
+	if err != nil {
+		errs = append(errs, err)
+	}
+	if age < 18 {
+		errs = append(errs, errors.New("Age must be at least 18 for Bricks & Pieces"))
+	}
+	switch cred.CountryCode {
+	case "AU", "AT", "BE", "CA", "CZ", "DK", "FI", "FR", "DE", "HU", "IE",
+		"IT", "LU", "NL", "NZ", "NO", "PL", "PT", "ES", "SE", "CH", "GB", "US":
+	default:
+		errs = append(errs, errors.New("Country is not supported for Bricks & Pieces"))
+	}
+	return cred, errs
 }
 
 func printResponseCode(tag string, resp *http.Response) {

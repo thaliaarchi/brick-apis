@@ -63,24 +63,17 @@ func (o *Order) printUnknownValues() {
 		switch o.Payment.Method {
 		default:
 			fmt.Printf("PaymentMethod: %s", o.Payment.Method)
-		case PaymentPayPal:
-		case PaymentPayPalOnsite:
+		case PaymentPayPal, PaymentPayPalOnsite:
 		}
 		switch o.Payment.CurrencyCode {
 		default:
 			fmt.Printf("CurrencyCode: %s", o.Payment.CurrencyCode)
-		case CurrencyCad:
-		case CurrencyEur:
-		case CurrencyHuf:
-		case CurrencyUsd:
+		case CurrencyCad, CurrencyEur, CurrencyHuf, CurrencyUsd:
 		}
 		switch o.Payment.Status {
 		default:
 			fmt.Printf("PaymentStatus: %s", o.Payment.Status)
-		case PaymentCompleted:
-		case PaymentReceived:
-		case PaymentNone:
-		case PaymentSent:
+		case PaymentCompleted, PaymentReceived, PaymentNone, PaymentSent:
 		}
 	}
 }
