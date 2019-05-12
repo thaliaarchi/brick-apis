@@ -24,15 +24,11 @@ type credentials struct {
 }
 
 func main() {
+	os.Mkdir("data", 0777)
+
 	cred, err := readCredentials("config.json")
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	sets := []string{"75192", "71043", "10256", "2000409", "70620"}
-	for _, set := range sets {
-		resp, err := getBricksAndPiecesProduct(cred, set)
-		writeResponse(resp, err, fmt.Sprintf("set-%s.json", set))
 	}
 
 	blUserClient, err := createBLUserClient(cred)
@@ -44,9 +40,27 @@ func main() {
 		log.Fatal(err)
 	}
 
-	printResponse(getOrderDetails(blStoreClient, 9999999))
+	resp, err := getBricksAndPiecesProduct(cred, "75192")
+	writeResponse(resp, err, "set-75192.json")
 
-	resp, err := searchWantedList(blUserClient, 0)
+	orders, err := getOrders(blStoreClient)
+	if err != nil {
+		fmt.Println(err)
+	}
+	if orders != nil {
+		orders.printUnknownValues()
+		for _, o := range orders.Orders {
+			order, err := getOrderDetails(blStoreClient, o.OrderID)
+			if err != nil {
+				fmt.Println(err)
+			}
+			if order != nil {
+				order.printUnknownValues()
+			}
+		}
+	}
+
+	resp, err = searchWantedList(blUserClient, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -114,7 +128,14 @@ func readCredentials(configFile string) (*credentials, error) {
 	return cred, nil
 }
 
+func printResponseCode(tag string, resp *http.Response) {
+	fmt.Printf("%s: %d %s\n", tag, resp.StatusCode, resp.Status)
+}
+
 func printResponse(resp *http.Response, err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println("Response:", resp.StatusCode, resp.Status)
 	if err != nil {
 		log.Fatal(err)
@@ -154,7 +175,7 @@ func responseToString(resp *http.Response) (string, error) {
 }
 
 func decodeAndWrite(r io.Reader, v interface{}, fileName string) error {
-	file, err := os.Create(fileName)
+	file, err := os.Create("data/" + fileName)
 	if err != nil {
 		return err
 	}
