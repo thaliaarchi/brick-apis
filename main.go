@@ -48,13 +48,11 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(colors)
-	for _, c := range colors.Colors {
-		color, err := getColor(blStoreClient, c.ColorID)
+	for _, c := range colors {
+		_, err := getColor(blStoreClient, c.ColorID)
 		if err != nil {
 			fmt.Println(err)
 		}
-		fmt.Println(color)
 	}
 
 	_, err = getBricksAndPiecesPart(cred, "3024")
@@ -70,17 +68,16 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	if orders != nil {
-		orders.printUnknownValues()
-		for _, o := range orders.Orders {
-			order, err := getOrder(blStoreClient, o.OrderID)
-			if err != nil {
-				fmt.Println(err)
-			}
-			if order != nil {
-				order.printUnknownValues()
-			}
+	for _, o := range orders {
+		order, err := getOrder(blStoreClient, o.OrderID)
+		if err != nil {
+			fmt.Println(err)
 		}
+		fmt.Println(order)
+		if order != nil {
+			order.printUnknownValues()
+		}
+		o.printUnknownValues()
 	}
 
 	resp, err := searchWantedList(blUserClient, 0)

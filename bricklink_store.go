@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"reflect"
+	"time"
 
 	"github.com/mrjones/oauth"
 )
@@ -17,28 +19,40 @@ func createBLStoreClient(cred *credentials) (*http.Client, error) {
 	return consumer.MakeHttpClient(accessToken)
 }
 
-func getOrderList(client *http.Client) (*OrderListResponse, error) {
+func getOrderList(client *http.Client) ([]Order, error) {
 	url := apiBase + "/orders?direction=out"
 	var orders OrderListResponse
-	return &orders, doBLStoreRequest(client, url, "Orders", "orders.json", &orders)
+	if err := doBLStoreRequest(client, url, "Orders", "orders.json", &orders); err != nil {
+		return nil, err
+	}
+	return orders.Data, nil
 }
 
-func getOrder(client *http.Client, id int64) (*OrderResponse, error) {
+func getOrder(client *http.Client, id int64) (*Order, error) {
 	url := fmt.Sprintf(apiBase+"/orders/%d", id)
 	var order OrderResponse
-	return &order, doBLStoreRequest(client, url, fmt.Sprintf("Order %d", id), fmt.Sprintf("order-%d.json", id), &order)
+	if err := doBLStoreRequest(client, url, fmt.Sprintf("Order %d", id), fmt.Sprintf("order-%d.json", id), &order); err != nil {
+		return nil, err
+	}
+	return &order.Data, nil
 }
 
-func getColorList(client *http.Client) (*ColorListResponse, error) {
+func getColorList(client *http.Client) ([]Color, error) {
 	url := apiBase + "/colors"
 	var colors ColorListResponse
-	return &colors, doBLStoreRequest(client, url, "Colors", "colors.json", &colors)
+	if err := doBLStoreRequest(client, url, "Colors", "colors.json", &colors); err != nil {
+		return nil, err
+	}
+	return colors.Data, nil
 }
 
-func getColor(client *http.Client, id int64) (*ColorResponse, error) {
+func getColor(client *http.Client, id int64) (*Color, error) {
 	url := fmt.Sprintf(apiBase+"/colors/%d", id)
 	var color ColorResponse
-	return &color, doBLStoreRequest(client, url, fmt.Sprintf("Color %d", id), fmt.Sprintf("color-%d.json", id), &color)
+	if err := doBLStoreRequest(client, url, fmt.Sprintf("Color %d", id), fmt.Sprintf("color-%d.json", id), &color); err != nil {
+		return nil, err
+	}
+	return &color.Data, nil
 }
 
 func doBLStoreRequest(client *http.Client, url, tag, fileName string, v interface{}) error {
@@ -48,17 +62,17 @@ func doBLStoreRequest(client *http.Client, url, tag, fileName string, v interfac
 		return err
 	}
 	defer resp.Body.Close()
-	return decodeAndWrite(resp.Body, v, fileName)
-}
-
-func (r *OrderListResponse) printUnknownValues() {
-	for _, o := range r.Orders {
-		o.printUnknownValues()
+	if err := decodeAndWrite(resp.Body, v, fileName); err != nil {
+		return err
 	}
-}
-
-func (r *OrderResponse) printUnknownValues() {
-	r.Order.printUnknownValues()
+	f := reflect.ValueOf(v).Elem().FieldByName("Meta")
+	if f != reflect.ValueOf(nil) {
+		meta := f.Interface().(Meta)
+		if meta.Description != "OK" || meta.Message != "OK" || meta.Code != 200 {
+			return fmt.Errorf("Meta is not OK 200: %v", meta)
+		}
+	}
+	return nil
 }
 
 func (o *Order) printUnknownValues() {
@@ -89,29 +103,29 @@ func (o *Order) printUnknownValues() {
 }
 
 type OrderListResponse struct {
-	Meta   Meta    `json:"meta"`
-	Orders []Order `json:"data"`
+	Meta Meta    `json:"meta"`
+	Data []Order `json:"data"`
 }
 
 type OrderResponse struct {
-	Meta  Meta  `json:"meta"`
-	Order Order `json:"data"`
+	Meta Meta  `json:"meta"`
+	Data Order `json:"data"`
 }
 
 type ColorListResponse struct {
-	Meta   Meta    `json:"meta"`
-	Colors []Color `json:"data"`
+	Meta Meta    `json:"meta"`
+	Data []Color `json:"data"`
 }
 
 type ColorResponse struct {
-	Meta  Meta  `json:"meta"`
-	Color Color `json:"data"`
+	Meta Meta  `json:"meta"`
+	Data Color `json:"data"`
 }
 
 type Order struct {
 	OrderID           int64       `json:"order_id"`
-	DateOrdered       string      `json:"date_ordered"`
-	DateStatusChanged string      `json:"date_status_changed"`
+	DateOrdered       time.Time   `json:"date_ordered"`
+	DateStatusChanged time.Time   `json:"date_status_changed"`
 	SellerName        string      `json:"seller_name"`
 	StoreName         string      `json:"store_name"`
 	BuyerName         string      `json:"buyer_name"`
@@ -121,8 +135,8 @@ type Order struct {
 	IsInvoiced        bool        `json:"is_invoiced"` // not in order list
 	TotalCount        int64       `json:"total_count"`
 	UniqueCount       int64       `json:"unique_count"`
-	TotalWeight       string      `json:"total_weight"`      // not in order list
-	BuyerOrderCount   int64       `json:"buyer_order_count"` // not in order list
+	TotalWeight       float64     `json:"total_weight,string"` // not in order list
+	BuyerOrderCount   int64       `json:"buyer_order_count"`   // not in order list
 	IsFiled           bool        `json:"is_filed"`
 	DriveThruSent     bool        `json:"drive_thru_sent"` // not in order list
 	Payment           *Payment    `json:"payment"`
@@ -134,15 +148,15 @@ type Order struct {
 type Payment struct {
 	Method       PaymentMethod `json:"method"`
 	CurrencyCode CurrencyCode  `json:"currency_code"`
-	DatePaid     string        `json:"date_paid,omitempty"`
+	DatePaid     time.Time     `json:"date_paid,omitempty"`
 	Status       PaymentStatus `json:"status"`
 }
 
 type Shipping struct {
-	MethodID    int64   `json:"method_id"`
-	Method      string  `json:"method"`
-	Address     Address `json:"address"`
-	DateShipped string  `json:"date_shipped"`
+	MethodID    int64     `json:"method_id"`
+	Method      string    `json:"method"`
+	Address     Address   `json:"address"`
+	DateShipped time.Time `json:"date_shipped"`
 }
 
 type Address struct {
@@ -164,17 +178,17 @@ type Name struct {
 
 type Cost struct {
 	CurrencyCode CurrencyCode `json:"currency_code"`
-	Subtotal     string       `json:"subtotal"`
-	GrandTotal   string       `json:"grand_total"`
-	Etc1         string       `json:"etc1,omitempty"`       // not in order list
-	Etc2         string       `json:"etc2,omitempty"`       // not in order list
-	Insurance    string       `json:"insurance,omitempty"`  // not in order list
-	Shipping     string       `json:"shipping,omitempty"`   // not in order list
-	Credit       string       `json:"credit,omitempty"`     // not in order list
-	Coupon       string       `json:"coupon,omitempty"`     // not in order list
-	SalesTax     string       `json:"salesTax,omitempty"`   // not in order list
-	VATRate      string       `json:"vat_rate,omitempty"`   // not in order list
-	VATAmount    string       `json:"vat_amount,omitempty"` // not in order list
+	Subtotal     float64      `json:"subtotal,string"`
+	GrandTotal   float64      `json:"grand_total,string"`
+	Etc1         float64      `json:"etc1,string"`       // not in order list
+	Etc2         float64      `json:"etc2,string"`       // not in order list
+	Insurance    float64      `json:"insurance,string"`  // not in order list
+	Shipping     float64      `json:"shipping,string"`   // not in order list
+	Credit       float64      `json:"credit,string"`     // not in order list
+	Coupon       float64      `json:"coupon,string"`     // not in order list
+	SalesTax     float64      `json:"salesTax,string"`   // not in order list
+	VATRate      float64      `json:"vat_rate,string"`   // not in order list
+	VATAmount    float64      `json:"vat_amount,string"` // not in order list
 }
 
 // http://apidev.bricklink.com/redmine/projects/bricklink-api/wiki/ColorResource
