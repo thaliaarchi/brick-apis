@@ -13,21 +13,31 @@ import (
 )
 
 // credentials stores user account and OAuth api credentials
-type credentials struct {
-	Username       string
-	Password       string
-	ConsumerKey    string
-	ConsumerSecret string
-	Token          string
-	TokenSecret    string
-	Age            string
-	CountryCode    string
+type Credentials struct {
+	BrickLink BrickLinkCredentials `json:"bricklink"`
+	Brickset  BricksetCredentials  `json:"brickset"`
+	Lego      LegoCredentials      `json:"lego"`
+}
+type BrickLinkCredentials struct {
+	Username       string `json:"username"`
+	Password       string `json:"password"`
+	ConsumerKey    string `json:"consumer_key"`
+	ConsumerSecret string `json:"consumer_secret"`
+	Token          string `json:"token"`
+	TokenSecret    string `json:"token_secret"`
+}
+type BricksetCredentials struct {
+	Key string `json:"key"`
+}
+type LegoCredentials struct {
+	Age         string `json:"age"`
+	CountryCode string `json:"country_code"`
 }
 
 func main() {
 	os.Mkdir("data", 0755)
 
-	cred, errs := readCredentials("config.json")
+	cred, errs := readCredentials("credentials.json")
 	if len(errs) > 0 {
 		for _, err := range errs {
 			fmt.Println(err)
@@ -35,34 +45,25 @@ func main() {
 		return
 	}
 
-	blUserClient, err := createBLUserClient(cred)
+	blUserClient, err := createBLUserClient(&cred.BrickLink)
 	if err != nil {
 		log.Fatal(err)
 	}
-	blStoreClient, err := createBLStoreClient(cred)
+	blStoreClient, err := createBLStoreClient(&cred.BrickLink)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	colors, err := getColorList(blStoreClient)
+	_, err = getColorList(blStoreClient)
 	if err != nil {
 		fmt.Println(err)
 	}
-	for _, c := range colors {
-		_, err := getColor(blStoreClient, c.ColorID)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-
-	_, err = getBricksAndPiecesPart(cred, "3024")
-	if err != nil {
-		fmt.Println(err)
-	}
-	_, err = getBricksAndPiecesSet(cred, "75192")
-	if err != nil {
-		fmt.Println(err)
-	}
+	// for _, c := range colors {
+	// 	_, err := getColor(blStoreClient, c.ColorID)
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 	}
+	// }
 
 	orders, err := getOrderList(blStoreClient)
 	if err != nil {
@@ -106,58 +107,70 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+
+	_, err = getBricksAndPiecesPart(&cred.Lego, "3024")
+	if err != nil {
+		fmt.Println(err)
+	}
+	_, err = getBricksAndPiecesSet(&cred.Lego, "75192")
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
-func readCredentials(configFile string) (*credentials, []error) {
+func readCredentials(configFile string) (*Credentials, []error) {
 	file, err := os.Open(configFile)
 	if err != nil {
 		return nil, []error{err}
 	}
 	decoder := json.NewDecoder(file)
-	cred := &credentials{}
-	err = decoder.Decode(cred)
+	var cred Credentials
+	err = decoder.Decode(&cred)
 	if err != nil {
 		return nil, []error{err}
 	}
 	var errs []error
-	if cred.Username == "" {
-		errs = append(errs, errors.New("Username configuration variable must be set"))
+	if cred.BrickLink.Username == "" {
+		errs = append(errs, errors.New("BrickLink username must be set in credentials"))
 	}
-	if cred.Password == "" {
-		errs = append(errs, errors.New("Password configuration variable must be set"))
+	if cred.BrickLink.Password == "" {
+		errs = append(errs, errors.New("BrickLink password must be set in credentials"))
 	}
-	if cred.ConsumerKey == "" {
-		errs = append(errs, errors.New("ConsumerKey configuration variable must be set"))
+	if cred.BrickLink.ConsumerKey == "" {
+		errs = append(errs, errors.New("BrickLink consumer key must be set in credentials"))
 	}
-	if cred.ConsumerSecret == "" {
-		errs = append(errs, errors.New("ConsumerSecret configuration variable must be set"))
+	if cred.BrickLink.ConsumerSecret == "" {
+		errs = append(errs, errors.New("BrickLink consumer secret must be set in credentials"))
 	}
-	if cred.Token == "" {
-		errs = append(errs, errors.New("Token configuration variable must be set"))
+	if cred.BrickLink.Token == "" {
+		errs = append(errs, errors.New("BrickLink token must be set in credentials"))
 	}
-	if cred.TokenSecret == "" {
-		errs = append(errs, errors.New("TokenSecret configuration variable must be set"))
+	if cred.BrickLink.TokenSecret == "" {
+		errs = append(errs, errors.New("BrickLink token secret must be set in credentials"))
 	}
-	if cred.Age == "" {
-		errs = append(errs, errors.New("Age configuration variable must be set"))
+	if cred.Brickset.Key == "" {
+		errs = append(errs, errors.New("Brickset key must be set in credentials"))
 	}
-	if cred.CountryCode == "" {
-		errs = append(errs, errors.New("CountryCode configuration variable must be set"))
+	if cred.Lego.Age == "" {
+		errs = append(errs, errors.New("Age must be set in credentials"))
 	}
-	age, err := strconv.Atoi(cred.Age)
+	if cred.Lego.CountryCode == "" {
+		errs = append(errs, errors.New("Country code must be set in credentials"))
+	}
+	age, err := strconv.Atoi(cred.Lego.Age)
 	if err != nil {
 		errs = append(errs, err)
 	}
 	if age < 18 {
 		errs = append(errs, errors.New("Age must be at least 18 for Bricks & Pieces"))
 	}
-	switch cred.CountryCode {
+	switch cred.Lego.CountryCode {
 	case "AU", "AT", "BE", "CA", "CZ", "DK", "FI", "FR", "DE", "HU", "IE",
 		"IT", "LU", "NL", "NZ", "NO", "PL", "PT", "ES", "SE", "CH", "GB", "US":
 	default:
 		errs = append(errs, errors.New("Country is not supported for Bricks & Pieces"))
 	}
-	return cred, errs
+	return &cred, errs
 }
 
 func printResponseCode(tag string, resp *http.Response) {

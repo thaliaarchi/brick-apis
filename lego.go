@@ -6,17 +6,17 @@ import (
 	"net/http"
 )
 
-func getBricksAndPiecesPart(cred *credentials, id string) (*ProductInformation, error) {
+func getBricksAndPiecesPart(cred *LegoCredentials, id string) (*ProductInformation, error) {
 	url := "https://www.lego.com/en-US/service/rpservice/getitemordesign?itemordesignnumber=" + id + "&isSalesFlow=true"
 	return doLEGORequest(cred, url, fmt.Sprintf("Part %s", id), fmt.Sprintf("part-%s.json", id))
 }
 
-func getBricksAndPiecesSet(cred *credentials, id string) (*ProductInformation, error) {
+func getBricksAndPiecesSet(cred *LegoCredentials, id string) (*ProductInformation, error) {
 	url := "https://www.lego.com/en-US/service/rpservice/getproduct?productnumber=" + id + "&isSalesFlow=true"
 	return doLEGORequest(cred, url, fmt.Sprintf("Part %s", id), fmt.Sprintf("set-%s.json", id))
 }
 
-func doLEGORequest(cred *credentials, url, tag, fileName string) (*ProductInformation, error) {
+func doLEGORequest(cred *LegoCredentials, url, tag, fileName string) (*ProductInformation, error) {
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal(err)

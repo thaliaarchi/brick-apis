@@ -13,7 +13,7 @@ const (
 	apiBase = "https://api.bricklink.com/api/store/v1"
 )
 
-func createBLStoreClient(cred *credentials) (*http.Client, error) {
+func createBLStoreClient(cred *BrickLinkCredentials) (*http.Client, error) {
 	consumer := oauth.NewConsumer(cred.ConsumerKey, cred.ConsumerSecret, oauth.ServiceProvider{})
 	accessToken := &oauth.AccessToken{Token: cred.Token, Secret: cred.TokenSecret}
 	return consumer.MakeHttpClient(accessToken)
