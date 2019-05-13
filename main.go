@@ -45,16 +45,17 @@ func main() {
 		return
 	}
 
-	blUserClient, err := createBLUserClient(&cred.BrickLink)
+	blUser, err := NewBrickLinkUserClient(&cred.BrickLink)
 	if err != nil {
 		log.Fatal(err)
 	}
-	blStoreClient, err := createBLStoreClient(&cred.BrickLink)
+	blStore, err := NewBrickLinkStoreClient(&cred.BrickLink)
 	if err != nil {
 		log.Fatal(err)
 	}
+	lego := NewLegoClient(&cred.Lego)
 
-	_, err = getColorList(blStoreClient)
+	_, err = blStore.GetColorList()
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -65,12 +66,12 @@ func main() {
 	// 	}
 	// }
 
-	orders, err := getOrderList(blStoreClient)
+	orders, err := blStore.GetOrderList()
 	if err != nil {
 		fmt.Println(err)
 	}
 	for _, o := range orders {
-		order, err := getOrder(blStoreClient, o.OrderID)
+		order, err := blStore.GetOrder(o.OrderID)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -81,7 +82,7 @@ func main() {
 		o.printUnknownValues()
 	}
 
-	resp, err := searchWantedList(blUserClient, 0)
+	resp, err := blUser.GetWantedList(0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,7 +97,7 @@ func main() {
 		if list.ID == 0 {
 			continue
 		}
-		resp, err := searchWantedList(blUserClient, list.ID)
+		resp, err := blUser.GetWantedList(list.ID)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -108,11 +109,11 @@ func main() {
 		}
 	}
 
-	_, err = getBricksAndPiecesPart(&cred.Lego, "3024")
+	_, err = lego.GetBricksAndPiecesPart("3024")
 	if err != nil {
 		fmt.Println(err)
 	}
-	_, err = getBricksAndPiecesSet(&cred.Lego, "75192")
+	_, err = lego.GetBricksAndPiecesSet("75192")
 	if err != nil {
 		fmt.Println(err)
 	}

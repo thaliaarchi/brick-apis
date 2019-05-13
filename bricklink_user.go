@@ -14,23 +14,31 @@ const (
 	cloneBase    = "https://www.bricklink.com/ajax/clone"
 )
 
-func createBLUserClient(cred *BrickLinkCredentials) (*http.Client, error) {
+type BrickLinkUserClient struct {
+	client      *http.Client
+	credentials BrickLinkCredentials
+}
+
+func NewBrickLinkUserClient(cred *BrickLinkCredentials) (*BrickLinkUserClient, error) {
 	jar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})
 	if err != nil {
 		return nil, err
 	}
-	client := &http.Client{Jar: jar}
-	_, err = client.PostForm(renovateBase+"/loginandout.ajax", url.Values{
-		"userid":          {cred.Username},
-		"password":        {cred.Password},
-		"keepme_loggedin": {"true"},
-	})
-	return client, err
+	return &BrickLinkUserClient{&http.Client{Jar: jar}, *cred}, nil
 }
 
-func searchWantedList(client *http.Client, id int64) (*http.Response, error) {
+func (c *BrickLinkUserClient) Login() error {
+	_, err := c.client.PostForm(renovateBase+"/loginandout.ajax", url.Values{
+		"userid":          {c.credentials.Username},
+		"password":        {c.credentials.Password},
+		"keepme_loggedin": {"true"},
+	})
+	return err
+}
+
+func (c *BrickLinkUserClient) GetWantedList(id int64) (*http.Response, error) {
 	url := fmt.Sprintf(cloneBase+"/wanted/search2.ajax?wantedMoreID=%d", id)
-	return client.Get(url)
+	return c.client.Get(url)
 }

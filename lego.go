@@ -6,22 +6,30 @@ import (
 	"net/http"
 )
 
-func getBricksAndPiecesPart(cred *LegoCredentials, id string) (*ProductInformation, error) {
+type LegoClient struct {
+	credentials *LegoCredentials
+}
+
+func NewLegoClient(cred *LegoCredentials) *LegoClient {
+	return &LegoClient{cred}
+}
+
+func (c *LegoClient) GetBricksAndPiecesPart(id string) (*ProductInformation, error) {
 	url := "https://www.lego.com/en-US/service/rpservice/getitemordesign?itemordesignnumber=" + id + "&isSalesFlow=true"
-	return doLEGORequest(cred, url, fmt.Sprintf("Part %s", id), fmt.Sprintf("part-%s.json", id))
+	return c.doRequest(url, fmt.Sprintf("Part %s", id), fmt.Sprintf("part-%s.json", id))
 }
 
-func getBricksAndPiecesSet(cred *LegoCredentials, id string) (*ProductInformation, error) {
+func (c *LegoClient) GetBricksAndPiecesSet(id string) (*ProductInformation, error) {
 	url := "https://www.lego.com/en-US/service/rpservice/getproduct?productnumber=" + id + "&isSalesFlow=true"
-	return doLEGORequest(cred, url, fmt.Sprintf("Part %s", id), fmt.Sprintf("set-%s.json", id))
+	return c.doRequest(url, fmt.Sprintf("Part %s", id), fmt.Sprintf("set-%s.json", id))
 }
 
-func doLEGORequest(cred *LegoCredentials, url, tag, fileName string) (*ProductInformation, error) {
+func (c *LegoClient) doRequest(url, tag, fileName string) (*ProductInformation, error) {
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	cookie := fmt.Sprintf(`csAgeAndCountry={"age":"%s","countrycode":"%s"}`, cred.Age, cred.CountryCode)
+	cookie := fmt.Sprintf(`csAgeAndCountry={"age":"%s","countrycode":"%s"}`, c.credentials.Age, c.credentials.CountryCode)
 	request.Header.Add("Cookie", cookie)
 	resp, err := http.DefaultClient.Do(request)
 	printResponseCode(tag, resp)

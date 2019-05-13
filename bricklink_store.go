@@ -13,50 +13,55 @@ const (
 	apiBase = "https://api.bricklink.com/api/store/v1"
 )
 
-func createBLStoreClient(cred *BrickLinkCredentials) (*http.Client, error) {
-	consumer := oauth.NewConsumer(cred.ConsumerKey, cred.ConsumerSecret, oauth.ServiceProvider{})
-	accessToken := &oauth.AccessToken{Token: cred.Token, Secret: cred.TokenSecret}
-	return consumer.MakeHttpClient(accessToken)
+type BrickLinkStoreClient struct {
+	client *http.Client
 }
 
-func getOrderList(client *http.Client) ([]Order, error) {
+func NewBrickLinkStoreClient(cred *BrickLinkCredentials) (*BrickLinkStoreClient, error) {
+	consumer := oauth.NewConsumer(cred.ConsumerKey, cred.ConsumerSecret, oauth.ServiceProvider{})
+	accessToken := &oauth.AccessToken{Token: cred.Token, Secret: cred.TokenSecret}
+	client, err := consumer.MakeHttpClient(accessToken)
+	return &BrickLinkStoreClient{client}, err
+}
+
+func (c *BrickLinkStoreClient) GetOrderList() ([]Order, error) {
 	url := apiBase + "/orders?direction=out"
 	var orders OrderListResponse
-	if err := doBLStoreRequest(client, url, "Orders", "orders.json", &orders); err != nil {
+	if err := c.doRequest(url, "Orders", "orders.json", &orders); err != nil {
 		return nil, err
 	}
 	return orders.Data, nil
 }
 
-func getOrder(client *http.Client, id int64) (*Order, error) {
+func (c *BrickLinkStoreClient) GetOrder(id int64) (*Order, error) {
 	url := fmt.Sprintf(apiBase+"/orders/%d", id)
 	var order OrderResponse
-	if err := doBLStoreRequest(client, url, fmt.Sprintf("Order %d", id), fmt.Sprintf("order-%d.json", id), &order); err != nil {
+	if err := c.doRequest(url, fmt.Sprintf("Order %d", id), fmt.Sprintf("order-%d.json", id), &order); err != nil {
 		return nil, err
 	}
 	return &order.Data, nil
 }
 
-func getColorList(client *http.Client) ([]Color, error) {
+func (c *BrickLinkStoreClient) GetColorList() ([]Color, error) {
 	url := apiBase + "/colors"
 	var colors ColorListResponse
-	if err := doBLStoreRequest(client, url, "Colors", "colors.json", &colors); err != nil {
+	if err := c.doRequest(url, "Colors", "colors.json", &colors); err != nil {
 		return nil, err
 	}
 	return colors.Data, nil
 }
 
-func getColor(client *http.Client, id int64) (*Color, error) {
+func (c *BrickLinkStoreClient) GetColor(id int64) (*Color, error) {
 	url := fmt.Sprintf(apiBase+"/colors/%d", id)
 	var color ColorResponse
-	if err := doBLStoreRequest(client, url, fmt.Sprintf("Color %d", id), fmt.Sprintf("color-%d.json", id), &color); err != nil {
+	if err := c.doRequest(url, fmt.Sprintf("Color %d", id), fmt.Sprintf("color-%d.json", id), &color); err != nil {
 		return nil, err
 	}
 	return &color.Data, nil
 }
 
-func doBLStoreRequest(client *http.Client, url, tag, fileName string, v interface{}) error {
-	resp, err := client.Get(url)
+func (c *BrickLinkStoreClient) doRequest(url, tag, fileName string, v interface{}) error {
+	resp, err := c.client.Get(url)
 	printResponseCode(tag, resp)
 	if err != nil {
 		return err
