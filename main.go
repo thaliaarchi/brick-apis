@@ -49,6 +49,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	blUser.Login()
 	blStore, err := NewBrickLinkStoreClient(&cred.BrickLink)
 	if err != nil {
 		log.Fatal(err)
