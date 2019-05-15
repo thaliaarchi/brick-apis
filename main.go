@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // credentials stores user account and OAuth api credentials
@@ -50,22 +51,20 @@ func main() {
 		log.Fatal(err)
 	}
 	blUser.Login()
+
 	blStore, err := NewBrickLinkStoreClient(&cred.BrickLink)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	lego := NewLegoClient(&cred.Lego)
+
+	reportOwnedWantedParts(blUser)
 
 	_, err = blStore.GetColorList()
 	if err != nil {
 		fmt.Println(err)
 	}
-	// for _, c := range colors {
-	// 	_, err := getColor(blStoreClient, c.ColorID)
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 	}
-	// }
 
 	orders, err := blStore.GetOrderList()
 	if err != nil {
@@ -83,32 +82,8 @@ func main() {
 		o.printUnknownValues()
 	}
 
-	resp, err := blUser.GetWantedList(0)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-	var search Search
-	err = decodeAndWrite(resp.Body, &search, "wl-0.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, list := range search.Results.WantedLists {
-		if list.ID == 0 {
-			continue
-		}
-		resp, err := blUser.GetWantedList(list.ID)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer resp.Body.Close()
-		var s Search
-		err = decodeAndWrite(resp.Body, &s, fmt.Sprintf("wl-%d.json", list.ID))
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	items, err := blStore.GetOrderItems(11037590)
+	fmt.Println(items)
 
 	_, err = lego.GetBricksAndPiecesPart("3024")
 	if err != nil {
@@ -263,4 +238,60 @@ func decodeAndWrite(r io.Reader, v interface{}, fileName string) error {
 		}
 	}
 	return err
+}
+
+func reportOwnedWantedParts(blUser *BrickLinkUserClient) {
+	var wanted [][]WantedItem
+	var sources [][]WantedItem
+	defaultList, err := blUser.GetWantedList(0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	wanted = append(wanted, defaultList.WantedItems)
+	for _, list := range defaultList.WantedLists {
+		if list.ID != 0 {
+			list, err := blUser.GetWantedList(list.ID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			name := list.WantedListInfo.Name
+			if strings.HasPrefix(name, "[LOOSE]") {
+				sources = append(sources, list.WantedItems)
+			} else if !strings.HasPrefix(name, "[IGNORE]") {
+				wanted = append(wanted, list.WantedItems)
+			}
+		}
+	}
+	wantedMap := make(map[string][]WantedItem)
+	for _, items := range wanted {
+		for _, item := range items {
+			if item.WantedQty > item.WantedQtyFilled {
+				key := item.ItemNumber + ";" + item.ColorName
+				wantedMap[key] = append(wantedMap[key], item)
+			}
+		}
+	}
+	sourceMap := make(map[string][]WantedItem)
+	for _, items := range sources {
+		for _, item := range items {
+			key := item.ItemNumber + ";" + item.ColorName
+			sourceMap[key] = append(sourceMap[key], item)
+		}
+	}
+	for _, sourceItems := range sourceMap {
+		item := sourceItems[0]
+		key := item.ItemNumber + ";" + item.ColorName
+		if wantedItems, ok := wantedMap[key]; ok {
+			fmt.Println("Want", item.ItemType, item.ColorName, item.ItemNumber, item.ItemName)
+			for _, wi := range wantedItems {
+				fmt.Printf(" - %d (have %d) in %s\n", wi.WantedQty-wi.WantedQtyFilled, wi.WantedQtyFilled, wi.WantedListName)
+			}
+			fmt.Println("Sources")
+			for _, si := range sourceItems {
+				name := strings.TrimSpace(strings.TrimPrefix(si.WantedListName, "[LOOSE]"))
+				fmt.Printf(" - %d in %s\n", si.WantedQty, name)
+			}
+			fmt.Println()
+		}
+	}
 }
