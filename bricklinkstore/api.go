@@ -1,11 +1,12 @@
-package main
+package bricklinkstore
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"reflect"
 	"time"
 
+	"github.com/andrewarchi/bricklink-buy/credentials"
 	"github.com/mrjones/oauth"
 )
 
@@ -13,80 +14,69 @@ const (
 	apiBase = "https://api.bricklink.com/api/store/v1"
 )
 
-type BrickLinkStoreClient struct {
+type Client struct {
 	client *http.Client
 }
 
-func NewBrickLinkStoreClient(cred *BrickLinkCredentials) (*BrickLinkStoreClient, error) {
+func NewClient(cred *credentials.BrickLinkStore) (*Client, error) {
 	consumer := oauth.NewConsumer(cred.ConsumerKey, cred.ConsumerSecret, oauth.ServiceProvider{})
 	accessToken := &oauth.AccessToken{Token: cred.Token, Secret: cred.TokenSecret}
 	client, err := consumer.MakeHttpClient(accessToken)
-	return &BrickLinkStoreClient{client}, err
+	return &Client{client}, err
 }
 
-func (c *BrickLinkStoreClient) GetOrderList() ([]Order, error) {
+func (c *Client) GetOrderList() ([]Order, error) {
 	url := apiBase + "/orders?direction=out"
 	var orders OrderListResponse
-	if err := c.doRequest(url, "Orders", "orders.json", &orders); err != nil {
+	if err := c.doGet(url, &orders); err != nil {
 		return nil, err
 	}
 	return orders.Data, nil
 }
 
-func (c *BrickLinkStoreClient) GetOrder(id int64) (*Order, error) {
+func (c *Client) GetOrder(id int64) (*Order, error) {
 	url := fmt.Sprintf(apiBase+"/orders/%d", id)
 	var order OrderResponse
-	if err := c.doRequest(url, fmt.Sprintf("Order %d", id), fmt.Sprintf("order-%d.json", id), &order); err != nil {
+	if err := c.doGet(url, &order); err != nil {
 		return nil, err
 	}
 	return &order.Data, nil
 }
 
-func (c *BrickLinkStoreClient) GetOrderItems(id int64) ([][]OrderItem, error) {
+func (c *Client) GetOrderItems(id int64) ([][]OrderItem, error) {
 	url := fmt.Sprintf(apiBase+"/orders/%d/items", id)
 	var items OrderItemsResponse
-	if err := c.doRequest(url, fmt.Sprintf("Order items %d", id), fmt.Sprintf("order-items-%d.json", id), &items); err != nil {
+	if err := c.doGet(url, &items); err != nil {
 		return nil, err
 	}
 	return items.Data, nil
 }
 
-func (c *BrickLinkStoreClient) GetColorList() ([]Color, error) {
+func (c *Client) GetColorList() ([]Color, error) {
 	url := apiBase + "/colors"
 	var colors ColorListResponse
-	if err := c.doRequest(url, "Colors", "colors.json", &colors); err != nil {
+	if err := c.doGet(url, &colors); err != nil {
 		return nil, err
 	}
 	return colors.Data, nil
 }
 
-func (c *BrickLinkStoreClient) GetColor(id int64) (*Color, error) {
+func (c *Client) GetColor(id int64) (*Color, error) {
 	url := fmt.Sprintf(apiBase+"/colors/%d", id)
 	var color ColorResponse
-	if err := c.doRequest(url, fmt.Sprintf("Color %d", id), fmt.Sprintf("color-%d.json", id), &color); err != nil {
+	if err := c.doGet(url, &color); err != nil {
 		return nil, err
 	}
 	return &color.Data, nil
 }
 
-func (c *BrickLinkStoreClient) doRequest(url, tag, fileName string, v interface{}) error {
+func (c *Client) doGet(url string, v interface{}) error {
 	resp, err := c.client.Get(url)
-	printResponseCode(tag, resp)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	if err := decodeAndWrite(resp.Body, v, fileName); err != nil {
-		return err
-	}
-	f := reflect.ValueOf(v).Elem().FieldByName("Meta")
-	if f != reflect.ValueOf(nil) {
-		meta := f.Interface().(Meta)
-		if meta.Description != "OK" || meta.Message != "OK" || meta.Code != 200 {
-			return fmt.Errorf("Meta is not OK 200: %v", meta)
-		}
-	}
-	return nil
+	return json.NewDecoder(resp.Body).Decode(v)
 }
 
 func (o *Order) printUnknownValues() {
@@ -248,10 +238,10 @@ type OrderItem struct {
 }
 
 type Item struct {
-	ItemNumber string        `json:"no"`
-	Name       string        `json:"name"`
-	Type       OrderItemType `json:"type"`
-	CategoryID int64         `json:"category_id"`
+	ItemNumber string   `json:"no"`
+	Name       string   `json:"name"`
+	Type       ItemType `json:"type"`
+	CategoryID int64    `json:"category_id"`
 }
 
 type OrderStatus string
@@ -259,7 +249,7 @@ type PaymentStatus string
 type PaymentMethod string
 type CurrencyCode string
 type ColorType string
-type OrderItemType string
+type ItemType string
 type NewOrUsed string
 type Completeness string
 
@@ -287,9 +277,15 @@ const (
 	ColorTypeSolid       ColorType     = "Solid"
 	ColorTypeSpeckle     ColorType     = "Speckle"
 	ColorTypeTransparent ColorType     = "Transparent"
-	OrderItemTypeMinifig OrderItemType = "MINIFIG"
-	OrderItemTypePart    OrderItemType = "PART"
-	OrderItemTypeSet     OrderItemType = "SET"
+	ItemTypeMinifig      ItemType      = "MINIFIG"
+	ItemTypePart         ItemType      = "PART"
+	ItemTypeSet          ItemType      = "SET"
+	ItemTypeBook         ItemType      = "BOOK"
+	ItemTypeGear         ItemType      = "GEAR"
+	ItemTypeCatalog      ItemType      = "CATALOG"
+	ItemTypeInstruction  ItemType      = "INSTRUCTION"
+	ItemTypeUnsortedLot  ItemType      = "UNSORTED_LOT"
+	ItemTypeOriginalBox  ItemType      = "ORIGINAL_BOX"
 	NewOrUsedNew         NewOrUsed     = "N"
 	CompletenessNA       Completeness  = ""
 	CompletenessComplete Completeness  = "C"
