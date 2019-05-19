@@ -15,7 +15,7 @@ func TestColors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	colors, err := bl.GetColorList()
+	colors, err := bl.GetColors()
 	if err != nil {
 		t.Fatal(err)
 	}

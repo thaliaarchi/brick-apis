@@ -33,7 +33,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	orders, err := blStore.GetOrderList()
+	orders, err := blStore.GetOrders("out")
 	if err != nil {
 		fmt.Println(err)
 	}
