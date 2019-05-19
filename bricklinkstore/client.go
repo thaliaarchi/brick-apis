@@ -85,9 +85,10 @@ func (c *Client) doGetAndSave(url string, v interface{}, filename string) error 
 	return err
 }
 
+// 2xx is successful: http://apidev.bricklink.com/redmine/projects/bricklink-api/wiki/Error_Handling
 func checkMeta(m meta) error {
 	if m.Code/100 != 2 {
-		return fmt.Errorf("status code not OK: %d %s (%s)", m.Code, m.Message, m.Description)
+		return fmt.Errorf("status %d %s: %s", m.Code, m.Message, m.Description)
 	}
 	return nil
 }
