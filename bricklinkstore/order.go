@@ -150,7 +150,7 @@ type Cost struct {
 // OrderItem is an item contained in an order
 type OrderItem struct {
 	InventoryID        int64        `json:"inventory_id"`                 // The ID of the inventory that includes the item
-	Item               Item         `json:"item"`                         // An object representation of the item
+	Item               CatalogItem  `json:"item"`                         // An object representation of the item
 	ColorID            int64        `json:"color_id"`                     // The ID of the color of the item
 	ColorName          string       `json:"color_name"`                   // Color name of the item
 	Quantity           int64        `json:"quantity"`                     // The number of items purchased in this order
@@ -168,19 +168,10 @@ type OrderItem struct {
 	OrderCost          float64      `json:"order_cost,string"`
 }
 
-// Item is a subset of a catalog item.
-type Item struct {
-	ItemNumber string   `json:"no"`          // Item's identification number in BL catalog
-	Name       string   `json:"name"`        // The name of the item
-	Type       ItemType `json:"type"`        // The type of the item (MINIFIG, PART, SET, BOOK, GEAR, CATALOG, INSTRUCTION, UNSORTED_LOT, ORIGINAL_BOX)
-	CategoryID int64    `json:"category_id"` // The main category of the item
-}
-
 type OrderStatus string
 type PaymentStatus string
 type PaymentMethod string
 type CurrencyCode string
-type ItemType string
 type NewOrUsed string
 type Completeness string
 
@@ -199,15 +190,6 @@ const (
 	CurrencyEur            CurrencyCode  = "EUR"
 	CurrencyHuf            CurrencyCode  = "HUF"
 	CurrencyUsd            CurrencyCode  = "USD"
-	ItemTypeMinifig        ItemType      = "MINIFIG"
-	ItemTypePart           ItemType      = "PART"
-	ItemTypeSet            ItemType      = "SET"
-	ItemTypeBook           ItemType      = "BOOK"
-	ItemTypeGear           ItemType      = "GEAR"
-	ItemTypeCatalog        ItemType      = "CATALOG"
-	ItemTypeInstruction    ItemType      = "INSTRUCTION"
-	ItemTypeUnsortedLot    ItemType      = "UNSORTED_LOT"
-	ItemTypeOriginalBox    ItemType      = "ORIGINAL_BOX"
 	NewOrUsedNew           NewOrUsed     = "N"
 	NewOrUsedUsed          NewOrUsed     = "U"
 	CompletenessNA         Completeness  = ""
