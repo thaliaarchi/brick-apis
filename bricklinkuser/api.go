@@ -42,11 +42,11 @@ func (c *Client) Login() error {
 
 func (c *Client) GetWantedList(id int64) (*WantedListResults, error) {
 	url := fmt.Sprintf(cloneBase+"/wanted/search2.ajax?wantedMoreID=%d", id)
-	var response WantedListResponse
-	if err := c.doGet(url, &response); err != nil {
+	var wantedList WantedListResponse
+	if err := c.doGet(url, &wantedList); err != nil {
 		return nil, err
 	}
-	return &response.Results, nil
+	return &wantedList.Results, checkResponse(wantedList.ReturnCode, wantedList.ReturnMessage)
 }
 
 func (c *Client) doGet(url string, v interface{}) error {
@@ -58,9 +58,16 @@ func (c *Client) doGet(url string, v interface{}) error {
 	return json.NewDecoder(resp.Body).Decode(v)
 }
 
+func checkResponse(returnCode int, message string) error {
+	if returnCode != 0 {
+		return fmt.Errorf("return code %d %s", returnCode, message)
+	}
+	return nil
+}
+
 type WantedListResponse struct {
 	Results        WantedListResults `json:"results"`
-	ReturnCode     int64             `json:"returnCode"`
+	ReturnCode     int               `json:"returnCode"`
 	ReturnMessage  string            `json:"returnMessage"`
 	ErrorTicket    int64             `json:"errorTicket"`
 	ProcessingTime int64             `json:"procssingTime"`
