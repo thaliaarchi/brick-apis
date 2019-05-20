@@ -26,6 +26,18 @@ func TestLogin(t *testing.T) {
 	t.Error(userHash)
 }
 
+func TestGetSet(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+	c := NewClient()
+	res, err := c.GetSet(apiKey, userHash, "22667")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Fatal(res)
+}
+
 func TestGetSets(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()

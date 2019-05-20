@@ -57,6 +57,16 @@ type loginResponse struct {
 	Response string   `xml:",chardata"`
 }
 
+// GetSet is used to get the details for a single set
+func (c *Client) GetSet(apiKey, userHash, setID string) (*GetSetsResponse, error) {
+	body := fmt.Sprintf("apiKey=%s&userHash=%s&SetID=%s", apiKey, userHash, setID)
+	r := &GetSetsResponse{}
+	if err := c.makeRequest("getSet", body, r); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
 // GetSets is used to get a list of sets from the Brickset API
 func (c *Client) GetSets(apiKey, userHash, query, theme, subTheme, setNumber, year, owned, wanted, orderBy, pageSize, pageNumber, userName string) (*GetSetsResponse, error) {
 	body := fmt.Sprintf("apiKey=%s&userHash=%s&query=%s&theme=%s&subtheme=%s&setNumber=%s&year=%s&owned=%s&wanted=%s&orderBy=%s&pageSize=%s&pageNumber=%s&userName=%s", apiKey, userHash, query, theme, subTheme, setNumber, year, owned, wanted, orderBy, pageSize, pageNumber, userName)
