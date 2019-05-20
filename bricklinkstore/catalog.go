@@ -105,7 +105,7 @@ func (c *Client) GetPriceGuideByColor(itemType ItemType, id string, colorID int,
 
 func (c *Client) getPriceGuide(url string) (*PriceGuide, error) {
 	var priceGuide priceGuideResponse
-	if err := c.doGetAndSave(url, &priceGuide, "price-guide.json"); err != nil {
+	if err := c.doGet(url, &priceGuide); err != nil {
 		return nil, err
 	}
 	return &priceGuide.Data, checkMeta(priceGuide.Meta)
@@ -118,10 +118,10 @@ type priceGuideResponse struct {
 
 // PriceGuideOptions contains optional parameters for GetPriceGuide and GetPriceGuideByColor
 type PriceGuideOptions struct {
-	GuideType    string
-	NewOrUsed    string
+	GuideType    GuideType
+	NewOrUsed    NewOrUsed
 	CountryCode  CountryCode
-	Region       string
+	Region       Region
 	CurrencyCode CurrencyCode
 	VAT          IncludeVAT
 }
@@ -147,6 +147,21 @@ func (o *PriceGuideOptions) toParams() string {
 		params = append(params, fmt.Sprintf("vat=%s", o.VAT))
 	}
 	return strings.Join(params, "&")
+}
+
+// GetKnownColors returns currently known colors of the item.
+func (c *Client) GetKnownColors(itemType ItemType, id string) ([]KnownColor, error) {
+	url := fmt.Sprintf("/items/%s/%s/colors", itemType, id)
+	var colors knownColorsResponse
+	if err := c.doGet(url, &colors); err != nil {
+		return nil, err
+	}
+	return colors.Data, checkMeta(colors.Meta)
+}
+
+type knownColorsResponse struct {
+	Meta meta         `json:"meta"`
+	Data []KnownColor `json:"data"`
 }
 
 type CatalogItem struct {
@@ -214,6 +229,11 @@ type PriceDetail struct {
 	DateOrdered       time.Time   `json:"date_ordered"`        // The time the order was created. Only included for last 6 months.
 }
 
+type KnownColor struct {
+	ColorID  int64 `json:"color_id"` // Color ID
+	Quantity int64 `json:"quantity"` // The quantity of items in that color
+}
+
 type ItemType string
 
 const (
@@ -235,6 +255,30 @@ const (
 	AppearsAsCounterpart AppearsAs = "C"
 	AppearsAsExtra       AppearsAs = "E"
 	AppearsAsRegular     AppearsAs = "R"
+)
+
+// GuideType indicates which price guide statistics to be provided.
+type GuideType string
+
+// Available values for GuideType. See: http://apidev.bricklink.com/redmine/projects/bricklink-api/wiki/CatalogMethod#-Parameters-5
+const (
+	GuideTypeStock GuideType = "stock" // Current Items for Sale (default)
+	GuideTypeSold  GuideType = "sold"  // Last 6 Months Sales
+)
+
+// Region is a geographical area for store grouping.
+type Region string
+
+// Available values for Region. See: http://apidev.bricklink.com/redmine/projects/bricklink-api/wiki/CatalogMethod#-Parameters-5
+const (
+	RegionAfrica       Region = "africa"        // Africa
+	RegionAsia         Region = "asia"          // Asia
+	RegionEU           Region = "eu"            // European Union
+	RegionEurope       Region = "europe"        // Europe
+	RegionMiddleEast   Region = "middle_east"   // Middle East
+	RegionNorthAmerica Region = "north_america" // North America
+	RegionOceania      Region = "oceania"       // Australia & Oceania
+	RegionSouthAmerica Region = "south_america" // South America
 )
 
 // IncludeVAT indicates that price will include VAT for the items of VAT enabled stores.
