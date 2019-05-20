@@ -97,7 +97,7 @@ type Order struct {
 // Payment contains payment information for an order.
 type Payment struct {
 	Method       PaymentMethod `json:"method"`              // The payment method for this order
-	CurrencyCode CurrencyCode  `json:"currency_code"`       // Currency code of the payment. ISO 4217
+	CurrencyCode CurrencyCode  `json:"currency_code"`       // Currency code of the payment
 	DatePaid     time.Time     `json:"date_paid,omitempty"` // The time the buyer paid
 	Status       PaymentStatus `json:"status"`              // Payment status. Available statuses: https://www.bricklink.com/help.asp?helpID=121
 }
@@ -118,7 +118,7 @@ type Address struct {
 	Full        string      `json:"full"`         // The full address in not-well-formatted
 	Address1    string      `json:"address1"`     // The first line of the address. It is provided only if a buyer updated his/her address and name as a normalized form
 	Address2    string      `json:"address2"`     // The second line of the address. It is provided only if a buyer updated his/her address and name as a normalized form
-	CountryCode string      `json:"country_code"` // The country code. ISO 3166-1 alpha-2 (exception: UK instead of GB) http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+	CountryCode CountryCode `json:"country_code"` // The country code
 	City        string      `json:"city"`         // The city. It is provided only if a buyer updated his/her address and name as a normalized form
 	State       string      `json:"state"`        // The state. It is provided only if a buyer updated his/her address and name as a normalized form
 	PostalCode  string      `json:"postal_code"`  // The postal code. It is provided only if a buyer updated his/her address and name as a normalized form
@@ -133,7 +133,7 @@ type PersonName struct {
 
 // Cost contains cost information for an order
 type Cost struct {
-	CurrencyCode CurrencyCode `json:"currency_code"`      // The currency code. ISO 4217
+	CurrencyCode CurrencyCode `json:"currency_code"`      // The currency code
 	Subtotal     float64      `json:"subtotal,string"`    // The total price for the order exclusive of shipping and other costs. This must equal the sum of all the items
 	GrandTotal   float64      `json:"grand_total,string"` // The total price for the order inclusive of tax, shipping and other costs
 	Etc1         float64      `json:"etc1,string"`        // Extra charge for this order (tax, packing, etc.)
@@ -160,8 +160,8 @@ type OrderItem struct {
 	UnitPriceFinal     float64      `json:"unit_price_final,string"`      // The unit price of this item after applying tiered pricing policy
 	DispUnitPrice      float64      `json:"disp_unit_price,string"`       // The original price of this item per sale unit in display currency of the user
 	DispUnitPriceFinal float64      `json:"disp_unit_price_final,string"` // The unit price of this item after applying tiered pricing policy in display currency of the user
-	CurrencyCode       CurrencyCode `json:"currency_code"`                // The currency code of the price. ISO 4217
-	DispCurrencyCode   CurrencyCode `json:"disp_currency_code"`           // The display currency code of the user. ISO 4217
+	CurrencyCode       CurrencyCode `json:"currency_code"`                // The currency code of the price
+	DispCurrencyCode   CurrencyCode `json:"disp_currency_code"`           // The display currency code of the user
 	Description        string       `json:"description"`                  // User remarks of the order item
 	Remarks            string       `json:"remarks"`                      // User description of the order item
 	Weight             float64      `json:"weight,string"`                // The weight of the item that overrides the catalog weight
@@ -171,7 +171,56 @@ type OrderItem struct {
 type OrderStatus string
 type PaymentStatus string
 type PaymentMethod string
+
+// CountryCode is represented as ISO 3166-1 alpha-2 (exception: UK instead of GB).
+// See: http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2.
+type CountryCode string
+
+// CurrencyCode is represented as ISO 4217. See: https://en.wikipedia.org/wiki/ISO_4217.
 type CurrencyCode string
+
+// BrickLink supports the following currency codes. See: https://www.bricklink.com/help.asp?helpID=436.
+const (
+	CurrencyCodeARS CurrencyCode = "ARS" // Argentine Peso
+	CurrencyCodeAUD CurrencyCode = "AUD" // Australian Dollar
+	CurrencyCodeBRL CurrencyCode = "BRL" // Brazilian Real
+	CurrencyCodeBGN CurrencyCode = "BGN" // Bulgarian Lev
+	CurrencyCodeCAD CurrencyCode = "CAD" // Canadian Dollar
+	CurrencyCodeCNY CurrencyCode = "CNY" // Chinese Yuan
+	CurrencyCodeHRK CurrencyCode = "HRK" // Croatian Kuna
+	CurrencyCodeCZK CurrencyCode = "CZK" // Czech Koruna
+	CurrencyCodeDKK CurrencyCode = "DKK" // Danish Krone
+	CurrencyCodeEUR CurrencyCode = "EUR" // Euro
+	CurrencyCodeGTQ CurrencyCode = "GTQ" // Guatemalan Quetzal
+	CurrencyCodeHKD CurrencyCode = "HKD" // Hong Kong Dollar
+	CurrencyCodeHUF CurrencyCode = "HUF" // Hungarian Forint
+	CurrencyCodeINR CurrencyCode = "INR" // Indian Rupee
+	CurrencyCodeIDR CurrencyCode = "IDR" // Indonesian Rupiah
+	CurrencyCodeILS CurrencyCode = "ILS" // Israeli New Shekel
+	CurrencyCodeJPY CurrencyCode = "JPY" // Japanese Yen
+	CurrencyCodeMOP CurrencyCode = "MOP" // Macau Pataca
+	CurrencyCodeMYR CurrencyCode = "MYR" // Malaysian Ringgit
+	CurrencyCodeMXN CurrencyCode = "MXN" // Mexican Peso
+	CurrencyCodeNZD CurrencyCode = "NZD" // New Zealand Dollar
+	CurrencyCodeNOK CurrencyCode = "NOK" // Norwegian Kroner
+	CurrencyCodePHP CurrencyCode = "PHP" // Philippine Peso
+	CurrencyCodePLN CurrencyCode = "PLN" // Polish Zloty
+	CurrencyCodeGBP CurrencyCode = "GBP" // Pound Sterling
+	CurrencyCodeRON CurrencyCode = "RON" // Romanian New Lei
+	CurrencyCodeRUB CurrencyCode = "RUB" // Russian Rouble
+	CurrencyCodeRSD CurrencyCode = "RSD" // Serbian Dinar
+	CurrencyCodeSGD CurrencyCode = "SGD" // Singapore Dollar
+	CurrencyCodeZAR CurrencyCode = "ZAR" // South African Rand
+	CurrencyCodeKRW CurrencyCode = "KRW" // South Korean Won
+	CurrencyCodeSEK CurrencyCode = "SEK" // Swedish Krona
+	CurrencyCodeCHF CurrencyCode = "CHF" // Swiss Franc
+	CurrencyCodeTWD CurrencyCode = "TWD" // Taiwan New Dollar
+	CurrencyCodeTHB CurrencyCode = "THB" // Thai Baht
+	CurrencyCodeTRY CurrencyCode = "TRY" // Turkish Lira
+	CurrencyCodeUAH CurrencyCode = "UAH" // Ukraine Hryvnia
+	CurrencyCodeUSD CurrencyCode = "USD" // US Dollar
+)
+
 type NewOrUsed string
 type Completeness string
 
@@ -186,10 +235,6 @@ const (
 	PaymentSent            PaymentStatus = "Sent"
 	PaymentPayPal          PaymentMethod = "PayPal"
 	PaymentPayPalOnsite    PaymentMethod = "PayPal (Onsite)"
-	CurrencyCad            CurrencyCode  = "CAD"
-	CurrencyEur            CurrencyCode  = "EUR"
-	CurrencyHuf            CurrencyCode  = "HUF"
-	CurrencyUsd            CurrencyCode  = "USD"
 	NewOrUsedNew           NewOrUsed     = "N"
 	NewOrUsedUsed          NewOrUsed     = "U"
 	CompletenessNA         Completeness  = ""

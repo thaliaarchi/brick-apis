@@ -31,6 +31,9 @@ func (c *Client) doGet(url string, v interface{}) error {
 	if err != nil {
 		return err
 	}
+	if resp.StatusCode/100 != 2 {
+		return fmt.Errorf("status %s", resp.Status)
+	}
 	defer resp.Body.Close()
 	return json.NewDecoder(resp.Body).Decode(v)
 }
@@ -45,6 +48,9 @@ func (c *Client) doGetAndSave(url string, v interface{}, filename string) error 
 	resp, err := c.client.Get(base + url)
 	if err != nil {
 		return err
+	}
+	if resp.StatusCode/100 != 2 {
+		return fmt.Errorf("status %s", resp.Status)
 	}
 	defer resp.Body.Close()
 

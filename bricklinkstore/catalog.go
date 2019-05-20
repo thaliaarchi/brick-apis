@@ -1,6 +1,10 @@
 package bricklinkstore
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+	"time"
+)
 
 // GetItem returns information about the specified item in BrickLink catalog. CatalogItem contains all fields.
 func (c *Client) GetItem(itemType ItemType, id string) (*CatalogItem, error) {
@@ -66,7 +70,7 @@ func (c *Client) GetSubsetsByColor(itemType ItemType, id string, colorID int, in
 
 func (c *Client) getSubsets(url string) ([]SubsetEntries, error) {
 	var subsets subsetEntriesResponse
-	if err := c.doGetAndSave(url, &subsets, "subsets.json"); err != nil {
+	if err := c.doGet(url, &subsets); err != nil {
 		return nil, err
 	}
 	return subsets.Data, checkMeta(subsets.Meta)
@@ -79,6 +83,70 @@ func subsetParams(includeBox, includeInstruction, breakMinifigs, breakSubsets bo
 type subsetEntriesResponse struct {
 	Meta meta            `json:"meta"`
 	Data []SubsetEntries `json:"data"`
+}
+
+// GetPriceGuide returns the price statistics of all colors of the specified item in BrickLink catalog. CatalogItem includes No and Type.
+func (c *Client) GetPriceGuide(itemType ItemType, id string, options *PriceGuideOptions) (*PriceGuide, error) {
+	url := fmt.Sprintf("/items/%s/%s/price", itemType, id)
+	if options != nil {
+		url += "?" + options.toParams()
+	}
+	return c.getPriceGuide(url)
+}
+
+// GetPriceGuideByColor returns the price statistics of the specified item in BrickLink catalog. CatalogItem includes No and Type.
+func (c *Client) GetPriceGuideByColor(itemType ItemType, id string, colorID int, options *PriceGuideOptions) (*PriceGuide, error) {
+	url := fmt.Sprintf("/items/%s/%s/price?color_id=%d", itemType, id, colorID)
+	if options != nil {
+		url += "&" + options.toParams()
+	}
+	return c.getPriceGuide(url)
+}
+
+func (c *Client) getPriceGuide(url string) (*PriceGuide, error) {
+	var priceGuide priceGuideResponse
+	if err := c.doGetAndSave(url, &priceGuide, "price-guide.json"); err != nil {
+		return nil, err
+	}
+	return &priceGuide.Data, checkMeta(priceGuide.Meta)
+}
+
+type priceGuideResponse struct {
+	Meta meta       `json:"meta"`
+	Data PriceGuide `json:"data"`
+}
+
+// PriceGuideOptions contains optional parameters for GetPriceGuide and GetPriceGuideByColor
+type PriceGuideOptions struct {
+	GuideType    string
+	NewOrUsed    string
+	CountryCode  string
+	Region       string
+	CurrencyCode string
+	VAT          string
+}
+
+func (o *PriceGuideOptions) toParams() string {
+	var params []string
+	if o.GuideType != "" {
+		params = append(params, "guide_type="+o.GuideType)
+	}
+	if o.NewOrUsed != "" {
+		params = append(params, "new_or_used="+o.NewOrUsed)
+	}
+	if o.CountryCode != "" {
+		params = append(params, "country_code="+o.CountryCode)
+	}
+	if o.Region != "" {
+		params = append(params, "region="+o.Region)
+	}
+	if o.CurrencyCode != "" {
+		params = append(params, "currency_code="+o.CurrencyCode)
+	}
+	if o.VAT != "" {
+		params = append(params, "vat="+o.VAT)
+	}
+	return strings.Join(params, "&")
 }
 
 type CatalogItem struct {
@@ -122,6 +190,28 @@ type SubsetEntry struct {
 	ExtraQuantity int64       `json:"extra_quantity"` // The number of items that are appear as "extra" item
 	IsAlternate   bool        `json:"is_alternate"`   // Indicates that the item is appear as "alternate" item in this specified item
 	IsCounterpart bool        `json:"is_counterpart"`
+}
+
+type PriceGuide struct {
+	Item          CatalogItem   `json:"item"`                 // An object representation of the item
+	NewOrUsed     string        `json:"new_or_used"`          // Indicates whether the price guide is for new or used (N: New, U: Used)
+	CurrencyCode  string        `json:"currency_code"`        // The currency code of the price
+	MinPrice      float64       `json:"min_price,string"`     // The lowest price of the item (in stock / that was sold for last 6 months)
+	MaxPrice      float64       `json:"max_price,string"`     // The highest price of the item (in stock / that was sold for last 6 months)
+	AvgPrice      float64       `json:"avg_price,string"`     // The average price of the item (in stock / that was sold for last 6 months)
+	QtyAvgPrice   float64       `json:"qty_avg_price,string"` // The average price of the item (in stock / that was sold for last 6 months) by quantity
+	UnitQuantity  int64         `json:"unit_quantity"`        // The number of inventories that include the item / The number of times the item has been sold for last 6 months
+	TotalQuantity int64         `json:"total_quantity"`       // The total number of the items in stock / The number of items has been sold for last 6 months
+	PriceDetail   []PriceDetail `json:"price_detail"`         // A list of objects that represent the detailed information of the price
+}
+
+type PriceDetail struct {
+	Quantity          int64       `json:"quantity"`            // The number of the items in the inventory
+	UnitPrice         float64     `json:"unit_price,string"`   // The original price of this item per sale unit
+	ShippingAvailable bool        `json:"shipping_available"`  // Indicates whether or not the seller ships to your country (based on the user profile). Only included for in stock
+	SellerCountryCode CountryCode `json:"seller_country_code"` // The country code of the seller's location. Only included for last 6 months.
+	BuyerCountryCode  CountryCode `json:"buyer_country_code"`  // The country code of the buyer's location. Only included for last 6 months.
+	DateOrdered       time.Time   `json:"date_ordered"`        // The time the order was created. Only included for last 6 months.
 }
 
 type ItemType string
