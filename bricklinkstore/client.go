@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/andrewarchi/bricklink-buy/credentials"
+	"github.com/andrewarchi/brick-apis/credentials"
 	"github.com/mrjones/oauth"
 )
 

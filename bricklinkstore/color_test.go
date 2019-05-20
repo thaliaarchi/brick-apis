@@ -3,7 +3,7 @@ package bricklinkstore
 import (
 	"testing"
 
-	"github.com/andrewarchi/bricklink-buy/credentials"
+	"github.com/andrewarchi/brick-apis/credentials"
 )
 
 func TestColors(t *testing.T) {

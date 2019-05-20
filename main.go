@@ -9,10 +9,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/andrewarchi/bricklink-buy/bricklinkstore"
-	"github.com/andrewarchi/bricklink-buy/bricklinkuser"
-	"github.com/andrewarchi/bricklink-buy/credentials"
-	"github.com/andrewarchi/bricklink-buy/legobap"
+	"github.com/andrewarchi/brick-apis/bricklinkstore"
+	"github.com/andrewarchi/brick-apis/bricklinkuser"
+	"github.com/andrewarchi/brick-apis/credentials"
+	"github.com/andrewarchi/brick-apis/legobap"
 )
 
 func main() {

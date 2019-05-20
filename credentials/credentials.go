@@ -98,7 +98,7 @@ func Read(configFile string) (*Credentials, error) {
 // CountryCode is used by LEGO Bricks & Pieces.
 type CountryCode string
 
-// Countries that can purchase through Bricks & Pieces.
+// Only these countries can purchase through Bricks & Pieces.
 const (
 	CountryCodeAU CountryCode = "AU" // Australia
 	CountryCodeAT CountryCode = "AT" // Austria

@@ -7,7 +7,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 
-	"github.com/andrewarchi/bricklink-buy/credentials"
+	"github.com/andrewarchi/brick-apis/credentials"
 	"golang.org/x/net/publicsuffix"
 )
 
