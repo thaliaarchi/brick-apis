@@ -54,27 +54,27 @@ type ProductInformation struct {
 	Product                Product     `json:"Product"`
 	Bricks                 []Brick     `json:"Bricks"`
 	ImageBaseURL           string      `json:"ImageBaseUrl"`
-	UnAvailableInformation interface{} `json:"UnAvailableInformation"`
+	UnavailableInformation interface{} `json:"UnAvailableInformation"`
 }
 
 type Brick struct {
-	ItemNo            int64              `json:"ItemNo"`
-	ItemDescr         string             `json:"ItemDescr"`
-	ColourLikeDescr   string             `json:"ColourLikeDescr"`
-	ColourDescr       string             `json:"ColourDescr"`
-	MaingroupDescr    string             `json:"MaingroupDescr"`
-	Asset             string             `json:"Asset"`
-	MaxQty            int64              `json:"MaxQty"`
-	IP                bool               `json:"Ip"`
-	Price             float64            `json:"Price"`
-	CID               string             `json:"CId"`
-	SQty              int64              `json:"SQty"`
-	DesignID          int64              `json:"DesignId"`
-	PriceStr          string             `json:"PriceStr"`
-	PriceWithTaxStr   string             `json:"PriceWithTaxStr"`
-	ItemUnavailable   bool               `json:"ItemUnavailable"`
-	UnavailableLink   *UnavailableLink   `json:"UnavailableLink"`
-	UnavailableReason *UnavailableReason `json:"UnavailableReason"`
+	ItemNo               int64              `json:"ItemNo"`
+	ItemDescription      string             `json:"ItemDescr"`
+	ColorLikeDescription string             `json:"ColourLikeDescr"`
+	ColorDescription     string             `json:"ColourDescr"`
+	MaingroupDescription string             `json:"MaingroupDescr"`
+	Asset                string             `json:"Asset"`
+	MaxQty               int64              `json:"MaxQty"`
+	IP                   bool               `json:"Ip"`
+	Price                float64            `json:"Price"`
+	CID                  string             `json:"CId"`
+	SQty                 int64              `json:"SQty"`
+	DesignID             int64              `json:"DesignId"`
+	PriceStr             string             `json:"PriceStr"`
+	PriceWithTaxStr      string             `json:"PriceWithTaxStr"`
+	ItemUnavailable      bool               `json:"ItemUnavailable"`
+	UnavailableLink      *UnavailableLink   `json:"UnavailableLink"`
+	UnavailableReason    *UnavailableReason `json:"UnavailableReason"`
 }
 
 type UnavailableLink struct {

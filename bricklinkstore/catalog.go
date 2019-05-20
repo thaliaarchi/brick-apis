@@ -120,31 +120,31 @@ type priceGuideResponse struct {
 type PriceGuideOptions struct {
 	GuideType    string
 	NewOrUsed    string
-	CountryCode  string
+	CountryCode  CountryCode
 	Region       string
-	CurrencyCode string
-	VAT          string
+	CurrencyCode CurrencyCode
+	VAT          IncludeVAT
 }
 
 func (o *PriceGuideOptions) toParams() string {
 	var params []string
 	if o.GuideType != "" {
-		params = append(params, "guide_type="+o.GuideType)
+		params = append(params, fmt.Sprintf("guide_type=%s", o.GuideType))
 	}
 	if o.NewOrUsed != "" {
-		params = append(params, "new_or_used="+o.NewOrUsed)
+		params = append(params, fmt.Sprintf("new_or_used=%s", o.NewOrUsed))
 	}
 	if o.CountryCode != "" {
-		params = append(params, "country_code="+o.CountryCode)
+		params = append(params, fmt.Sprintf("country_code=%s", o.CountryCode))
 	}
 	if o.Region != "" {
-		params = append(params, "region="+o.Region)
+		params = append(params, fmt.Sprintf("region=%s", o.Region))
 	}
 	if o.CurrencyCode != "" {
-		params = append(params, "currency_code="+o.CurrencyCode)
+		params = append(params, fmt.Sprintf("currency_code=%s", o.CurrencyCode))
 	}
 	if o.VAT != "" {
-		params = append(params, "vat="+o.VAT)
+		params = append(params, fmt.Sprintf("vat=%s", o.VAT))
 	}
 	return strings.Join(params, "&")
 }
@@ -215,20 +215,34 @@ type PriceDetail struct {
 }
 
 type ItemType string
+
+const (
+	ItemTypeMinifig     ItemType = "MINIFIG"
+	ItemTypePart        ItemType = "PART"
+	ItemTypeSet         ItemType = "SET"
+	ItemTypeBook        ItemType = "BOOK"
+	ItemTypeGear        ItemType = "GEAR"
+	ItemTypeCatalog     ItemType = "CATALOG"
+	ItemTypeInstruction ItemType = "INSTRUCTION"
+	ItemTypeUnsortedLot ItemType = "UNSORTED_LOT"
+	ItemTypeOriginalBox ItemType = "ORIGINAL_BOX"
+)
+
 type AppearsAs string
 
 const (
-	ItemTypeMinifig      ItemType  = "MINIFIG"
-	ItemTypePart         ItemType  = "PART"
-	ItemTypeSet          ItemType  = "SET"
-	ItemTypeBook         ItemType  = "BOOK"
-	ItemTypeGear         ItemType  = "GEAR"
-	ItemTypeCatalog      ItemType  = "CATALOG"
-	ItemTypeInstruction  ItemType  = "INSTRUCTION"
-	ItemTypeUnsortedLot  ItemType  = "UNSORTED_LOT"
-	ItemTypeOriginalBox  ItemType  = "ORIGINAL_BOX"
 	AppearsAsAlternate   AppearsAs = "A"
 	AppearsAsCounterpart AppearsAs = "C"
 	AppearsAsExtra       AppearsAs = "E"
 	AppearsAsRegular     AppearsAs = "R"
+)
+
+// IncludeVAT indicates that price will include VAT for the items of VAT enabled stores.
+type IncludeVAT string
+
+// Available values for IncludeVAT. See: http://apidev.bricklink.com/redmine/projects/bricklink-api/wiki/CatalogMethod#-Parameters-5.
+const (
+	IncludeVATNo     IncludeVAT = "N" // Exclude VAT (default)
+	IncludeVATYes    IncludeVAT = "Y" // Include VAT
+	IncludeVATNorway IncludeVAT = "O" // Include VAT as Norway settings
 )

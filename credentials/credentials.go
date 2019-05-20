@@ -34,8 +34,8 @@ type Brickset struct {
 }
 
 type LegoBAP struct {
-	Age         string `json:"age"`
-	CountryCode string `json:"country_code"`
+	Age         string      `json:"age"`
+	CountryCode CountryCode `json:"country_code"`
 }
 
 func Read(configFile string) (*Credentials, error) {
@@ -84,12 +84,6 @@ func Read(configFile string) (*Credentials, error) {
 	if age < 18 {
 		errs = append(errs, errors.New("Age must be at least 18 for Bricks & Pieces"))
 	}
-	switch cred.Lego.CountryCode {
-	case "AU", "AT", "BE", "CA", "CZ", "DK", "FI", "FR", "DE", "HU", "IE",
-		"IT", "LU", "NL", "NZ", "NO", "PL", "PT", "ES", "SE", "CH", "GB", "US":
-	default:
-		errs = append(errs, errors.New("Country is not supported for Bricks & Pieces"))
-	}
 	err = nil
 	for i := range errs {
 		if err == nil {
@@ -100,3 +94,33 @@ func Read(configFile string) (*Credentials, error) {
 	}
 	return &cred, err
 }
+
+// CountryCode is used by LEGO Bricks & Pieces.
+type CountryCode string
+
+// Countries that can purchase through Bricks & Pieces.
+const (
+	CountryCodeAU CountryCode = "AU" // Australia
+	CountryCodeAT CountryCode = "AT" // Austria
+	CountryCodeBE CountryCode = "BE" // Belgium
+	CountryCodeCA CountryCode = "CA" // Canada
+	CountryCodeCZ CountryCode = "CZ" // Czech Republic
+	CountryCodeDK CountryCode = "DK" // Denmark
+	CountryCodeFI CountryCode = "FI" // Finland
+	CountryCodeFR CountryCode = "FR" // France
+	CountryCodeDE CountryCode = "DE" // Germany
+	CountryCodeHU CountryCode = "HU" // Hungary
+	CountryCodeIE CountryCode = "IE" // Ireland
+	CountryCodeIT CountryCode = "IT" // Italy
+	CountryCodeLU CountryCode = "LU" // Luxembourg
+	CountryCodeNL CountryCode = "NL" // Netherlands
+	CountryCodeNZ CountryCode = "NZ" // New Zealand
+	CountryCodeNO CountryCode = "NO" // Norway
+	CountryCodePL CountryCode = "PL" // Poland
+	CountryCodePT CountryCode = "PT" // Portugal
+	CountryCodeES CountryCode = "ES" // Spain
+	CountryCodeSE CountryCode = "SE" // Sweden
+	CountryCodeCH CountryCode = "CH" // Switzerland
+	CountryCodeGB CountryCode = "GB" // United Kingdom
+	CountryCodeUS CountryCode = "US" // United States
+)

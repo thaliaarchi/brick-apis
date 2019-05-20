@@ -88,10 +88,10 @@ type Order struct {
 	TotalCount        int64       `json:"total_count"`         // The total number of items included in this order
 	UniqueCount       int64       `json:"unique_count"`        // The unique number of items included in this order
 	TotalWeight       float64     `json:"total_weight,string"` // The total weight of the items ordered. It applies the seller's custom weight when present to override the catalog weight. 0 if the order includes at least one item without any weight information or incomplete set
-	Payment           *Payment    `json:"payment"`             // Information related to the payment of this order
-	Shipping          *Shipping   `json:"shipping"`            // Information related to the shipping. API name data normalization: http://apidev.bricklink.com/redmine/boards/1/topics/4
-	Cost              *Cost       `json:"cost"`                // Cost information for this order
-	DisplayCost       *Cost       `json:"disp_cost"`           // Cost information for this order in display currency
+	Payment           Payment     `json:"payment"`             // Information related to the payment of this order
+	Shipping          Shipping    `json:"shipping"`            // Information related to the shipping. API name data normalization: http://apidev.bricklink.com/redmine/boards/1/topics/4
+	Cost              Cost        `json:"cost"`                // Cost information for this order
+	DisplayCost       Cost        `json:"disp_cost"`           // Cost information for this order in display currency
 }
 
 // Payment contains payment information for an order.
@@ -114,7 +114,7 @@ type Shipping struct {
 
 // Address contains a user's address. The split fields are given only if the user provided their address in normalized form.
 type Address struct {
-	Name        *PersonName `json:"name"`         // An object representation of a person's name
+	Name        PersonName  `json:"name"`         // An object representation of a person's name
 	Full        string      `json:"full"`         // The full address in not-well-formatted
 	Address1    string      `json:"address1"`     // The first line of the address. It is provided only if a buyer updated his/her address and name as a normalized form
 	Address2    string      `json:"address2"`     // The second line of the address. It is provided only if a buyer updated his/her address and name as a normalized form
@@ -169,8 +169,29 @@ type OrderItem struct {
 }
 
 type OrderStatus string
+
+const (
+	OrderCompleted OrderStatus = "COMPLETED"
+	OrderReceived  OrderStatus = "RECEIVED"
+	OrderPending   OrderStatus = "PENDING"
+	OrderPurged    OrderStatus = "PURGED"
+)
+
 type PaymentStatus string
+
+const (
+	PaymentStatusCompleted PaymentStatus = "Completed"
+	PaymentStatusReceived  PaymentStatus = "Received"
+	PaymentStatusNone      PaymentStatus = "None"
+	PaymentStatusSent      PaymentStatus = "Sent"
+)
+
 type PaymentMethod string
+
+const (
+	PaymentMethodPayPal       PaymentMethod = "PayPal"
+	PaymentMethodPayPalOnsite PaymentMethod = "PayPal (Onsite)"
+)
 
 // CountryCode is represented as ISO 3166-1 alpha-2 (exception: UK instead of GB).
 // See: http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2.
@@ -179,7 +200,7 @@ type CountryCode string
 // CurrencyCode is represented as ISO 4217. See: https://en.wikipedia.org/wiki/ISO_4217.
 type CurrencyCode string
 
-// BrickLink supports the following currency codes. See: https://www.bricklink.com/help.asp?helpID=436.
+// BrickLink supports these currency codes. See: https://www.bricklink.com/help.asp?helpID=436.
 const (
 	CurrencyCodeARS CurrencyCode = "ARS" // Argentine Peso
 	CurrencyCodeAUD CurrencyCode = "AUD" // Australian Dollar
@@ -222,23 +243,16 @@ const (
 )
 
 type NewOrUsed string
+
+const (
+	NewOrUsedNew  NewOrUsed = "N"
+	NewOrUsedUsed NewOrUsed = "U"
+)
+
 type Completeness string
 
 const (
-	OrderCompleted         OrderStatus   = "COMPLETED"
-	OrderReceived          OrderStatus   = "RECEIVED"
-	OrderPending           OrderStatus   = "PENDING"
-	OrderPurged            OrderStatus   = "PURGED"
-	PaymentCompleted       PaymentStatus = "Completed"
-	PaymentReceived        PaymentStatus = "Received"
-	PaymentNone            PaymentStatus = "None"
-	PaymentSent            PaymentStatus = "Sent"
-	PaymentPayPal          PaymentMethod = "PayPal"
-	PaymentPayPalOnsite    PaymentMethod = "PayPal (Onsite)"
-	NewOrUsedNew           NewOrUsed     = "N"
-	NewOrUsedUsed          NewOrUsed     = "U"
-	CompletenessNA         Completeness  = ""
-	CompletenessComplete   Completeness  = "C"
-	CompletenessIncomplete Completeness  = "B"
-	CompletenessSealed     Completeness  = "S"
+	CompletenessComplete   Completeness = "C"
+	CompletenessIncomplete Completeness = "B"
+	CompletenessSealed     Completeness = "S"
 )
