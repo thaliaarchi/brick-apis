@@ -67,7 +67,7 @@ type Brick struct {
 	MaxQty               int64              `json:"MaxQty"`
 	IP                   bool               `json:"Ip"`
 	Price                float64            `json:"Price"`
-	CID                  string             `json:"CId"`
+	CurrencyID           string             `json:"CId"`
 	SQty                 int64              `json:"SQty"`
 	DesignID             int64              `json:"DesignId"`
 	PriceStr             string             `json:"PriceStr"`

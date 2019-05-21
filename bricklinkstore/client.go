@@ -102,5 +102,5 @@ func checkMeta(m meta) error {
 type meta struct {
 	Description string `json:"description"`
 	Message     string `json:"message"`
-	Code        int    `json:"code"`
+	Code        int64  `json:"code"`
 }
