@@ -1,30 +1,41 @@
-package main
+package legobap
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/andrewarchi/brick-apis/credentials"
 )
 
-type LegoClient struct {
-	credentials *LegoCredentials
+type LegoBAPClient struct {
+	credentials *credentials.LegoBAP
 }
 
-func NewLegoClient(cred *LegoCredentials) *LegoClient {
-	return &LegoClient{cred}
+func NewClient(cred *credentials.LegoBAP) *LegoBAPClient {
+	return &LegoBAPClient{cred}
 }
 
-func (c *LegoClient) GetBricksAndPiecesPart(id string) (*ProductInformation, error) {
+func (c *LegoBAPClient) GetPart(id string) (*ProductInformation, error) {
 	url := "https://www.lego.com/en-US/service/rpservice/getitemordesign?itemordesignnumber=" + id + "&isSalesFlow=true"
-	return c.doRequest(url, fmt.Sprintf("Part %s", id), fmt.Sprintf("part-%s.json", id))
+	var part ProductInformation
+	if err := c.doGet(url, &part); err != nil {
+		return nil, err
+	}
+	return &part, nil
 }
 
-func (c *LegoClient) GetBricksAndPiecesSet(id string) (*ProductInformation, error) {
+func (c *LegoBAPClient) GetSet(id string) (*ProductInformation, error) {
 	url := "https://www.lego.com/en-US/service/rpservice/getproduct?productnumber=" + id + "&isSalesFlow=true"
-	return c.doRequest(url, fmt.Sprintf("Part %s", id), fmt.Sprintf("set-%s.json", id))
+	var set ProductInformation
+	if err := c.doGet(url, &set); err != nil {
+		return nil, err
+	}
+	return &set, nil
 }
 
-func (c *LegoClient) doRequest(url, tag, fileName string) (*ProductInformation, error) {
+func (c *LegoBAPClient) doGet(url string, v interface{}) error {
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -32,41 +43,38 @@ func (c *LegoClient) doRequest(url, tag, fileName string) (*ProductInformation, 
 	cookie := fmt.Sprintf(`csAgeAndCountry={"age":"%s","countrycode":"%s"}`, c.credentials.Age, c.credentials.CountryCode)
 	request.Header.Add("Cookie", cookie)
 	resp, err := http.DefaultClient.Do(request)
-	printResponseCode(tag, resp)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
-	var product ProductInformation
-	err = decodeAndWrite(resp.Body, &product, fileName)
-	return &product, err
+	return json.NewDecoder(resp.Body).Decode(v)
 }
 
 type ProductInformation struct {
 	Product                Product     `json:"Product"`
 	Bricks                 []Brick     `json:"Bricks"`
 	ImageBaseURL           string      `json:"ImageBaseUrl"`
-	UnAvailableInformation interface{} `json:"UnAvailableInformation"`
+	UnavailableInformation interface{} `json:"UnAvailableInformation"`
 }
 
 type Brick struct {
-	ItemNo            int64              `json:"ItemNo"`
-	ItemDescr         string             `json:"ItemDescr"`
-	ColourLikeDescr   string             `json:"ColourLikeDescr"`
-	ColourDescr       string             `json:"ColourDescr"`
-	MaingroupDescr    string             `json:"MaingroupDescr"`
-	Asset             string             `json:"Asset"`
-	MaxQty            int64              `json:"MaxQty"`
-	IP                bool               `json:"Ip"`
-	Price             float64            `json:"Price"`
-	CID               string             `json:"CId"`
-	SQty              int64              `json:"SQty"`
-	DesignID          int64              `json:"DesignId"`
-	PriceStr          string             `json:"PriceStr"`
-	PriceWithTaxStr   string             `json:"PriceWithTaxStr"`
-	ItemUnavailable   bool               `json:"ItemUnavailable"`
-	UnavailableLink   *UnavailableLink   `json:"UnavailableLink"`
-	UnavailableReason *UnavailableReason `json:"UnavailableReason"`
+	ItemNo               int64              `json:"ItemNo"`
+	ItemDescription      string             `json:"ItemDescr"`
+	ColorLikeDescription string             `json:"ColourLikeDescr"`
+	ColorDescription     string             `json:"ColourDescr"`
+	MaingroupDescription string             `json:"MaingroupDescr"`
+	Asset                string             `json:"Asset"`
+	MaxQty               int64              `json:"MaxQty"`
+	IP                   bool               `json:"Ip"`
+	Price                float64            `json:"Price"`
+	CID                  string             `json:"CId"`
+	SQty                 int64              `json:"SQty"`
+	DesignID             int64              `json:"DesignId"`
+	PriceStr             string             `json:"PriceStr"`
+	PriceWithTaxStr      string             `json:"PriceWithTaxStr"`
+	ItemUnavailable      bool               `json:"ItemUnavailable"`
+	UnavailableLink      *UnavailableLink   `json:"UnavailableLink"`
+	UnavailableReason    *UnavailableReason `json:"UnavailableReason"`
 }
 
 type UnavailableLink struct {

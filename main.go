@@ -1,72 +1,39 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
+
+	"github.com/andrewarchi/brick-apis/bricklinkstore"
+	"github.com/andrewarchi/brick-apis/bricklinkuser"
+	"github.com/andrewarchi/brick-apis/credentials"
+	"github.com/andrewarchi/brick-apis/legobap"
 )
 
-// credentials stores user account and OAuth api credentials
-type Credentials struct {
-	BrickLink BrickLinkCredentials `json:"bricklink"`
-	Brickset  BricksetCredentials  `json:"brickset"`
-	Lego      LegoCredentials      `json:"lego"`
-}
-type BrickLinkCredentials struct {
-	Username       string `json:"username"`
-	Password       string `json:"password"`
-	ConsumerKey    string `json:"consumer_key"`
-	ConsumerSecret string `json:"consumer_secret"`
-	Token          string `json:"token"`
-	TokenSecret    string `json:"token_secret"`
-}
-type BricksetCredentials struct {
-	Key string `json:"key"`
-}
-type LegoCredentials struct {
-	Age         string `json:"age"`
-	CountryCode string `json:"country_code"`
-}
-
 func main() {
-	os.Mkdir("data", 0755)
-
-	cred, errs := readCredentials("credentials.json")
-	if len(errs) > 0 {
-		for _, err := range errs {
-			fmt.Println(err)
-		}
-		return
+	cred, err := credentials.Read("credentials.json")
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	blUser, err := NewBrickLinkUserClient(&cred.BrickLink)
+	blUser, err := bricklinkuser.NewClient(cred.BrickLinkUser)
 	if err != nil {
 		log.Fatal(err)
 	}
 	blUser.Login()
+	reportOwnedWantedParts(blUser)
 
-	blStore, err := NewBrickLinkStoreClient(&cred.BrickLink)
+	blStore, err := bricklinkstore.NewClient(cred.BrickLinkStore)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	lego := NewLegoClient(&cred.Lego)
-
-	reportOwnedWantedParts(blUser)
-
-	_, err = blStore.GetColorList()
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	orders, err := blStore.GetOrderList()
+	orders, err := blStore.GetOrders("out")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -76,82 +43,14 @@ func main() {
 			fmt.Println(err)
 		}
 		fmt.Println(order)
-		if order != nil {
-			order.printUnknownValues()
-		}
-		o.printUnknownValues()
 	}
 
 	items, err := blStore.GetOrderItems(11037590)
 	fmt.Println(items)
 
-	_, err = lego.GetBricksAndPiecesPart("3024")
-	if err != nil {
-		fmt.Println(err)
-	}
-	_, err = lego.GetBricksAndPiecesSet("75192")
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
-func readCredentials(configFile string) (*Credentials, []error) {
-	file, err := os.Open(configFile)
-	if err != nil {
-		return nil, []error{err}
-	}
-	decoder := json.NewDecoder(file)
-	var cred Credentials
-	err = decoder.Decode(&cred)
-	if err != nil {
-		return nil, []error{err}
-	}
-	var errs []error
-	if cred.BrickLink.Username == "" {
-		errs = append(errs, errors.New("BrickLink username must be set in credentials"))
-	}
-	if cred.BrickLink.Password == "" {
-		errs = append(errs, errors.New("BrickLink password must be set in credentials"))
-	}
-	if cred.BrickLink.ConsumerKey == "" {
-		errs = append(errs, errors.New("BrickLink consumer key must be set in credentials"))
-	}
-	if cred.BrickLink.ConsumerSecret == "" {
-		errs = append(errs, errors.New("BrickLink consumer secret must be set in credentials"))
-	}
-	if cred.BrickLink.Token == "" {
-		errs = append(errs, errors.New("BrickLink token must be set in credentials"))
-	}
-	if cred.BrickLink.TokenSecret == "" {
-		errs = append(errs, errors.New("BrickLink token secret must be set in credentials"))
-	}
-	if cred.Brickset.Key == "" {
-		errs = append(errs, errors.New("Brickset key must be set in credentials"))
-	}
-	if cred.Lego.Age == "" {
-		errs = append(errs, errors.New("Age must be set in credentials"))
-	}
-	if cred.Lego.CountryCode == "" {
-		errs = append(errs, errors.New("Country code must be set in credentials"))
-	}
-	age, err := strconv.Atoi(cred.Lego.Age)
-	if err != nil {
-		errs = append(errs, err)
-	}
-	if age < 18 {
-		errs = append(errs, errors.New("Age must be at least 18 for Bricks & Pieces"))
-	}
-	switch cred.Lego.CountryCode {
-	case "AU", "AT", "BE", "CA", "CZ", "DK", "FI", "FR", "DE", "HU", "IE",
-		"IT", "LU", "NL", "NZ", "NO", "PL", "PT", "ES", "SE", "CH", "GB", "US":
-	default:
-		errs = append(errs, errors.New("Country is not supported for Bricks & Pieces"))
-	}
-	return &cred, errs
-}
-
-func printResponseCode(tag string, resp *http.Response) {
-	fmt.Printf("%s: %d %s\n", tag, resp.StatusCode, resp.Status)
+	bap := legobap.NewClient(cred.Lego)
+	fmt.Println(bap.GetPart("3024"))
+	fmt.Println(bap.GetSet("75192"))
 }
 
 func printResponse(resp *http.Response, err error) {
@@ -196,53 +95,9 @@ func responseToString(resp *http.Response) (string, error) {
 	return string(bodyBytes), err
 }
 
-func decodeAndWrite(r io.Reader, v interface{}, fileName string) error {
-	file, err := os.Create("data/" + fileName)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	pr, pw := io.Pipe()
-	tr := io.TeeReader(r, pw)
-
-	done := make(chan bool)
-	errs := make(chan error)
-	defer close(done)
-
-	go func() {
-		defer pw.Close()
-		if _, err := io.Copy(file, tr); err != nil {
-			errs <- err
-		}
-		done <- true
-	}()
-
-	go func() {
-		decoder := json.NewDecoder(pr)
-		if err := decoder.Decode(&v); err != nil {
-			errs <- err
-		}
-		done <- true
-	}()
-
-	<-done
-	<-done
-	close(errs)
-	err = nil
-	for e := range errs {
-		if err == nil {
-			err = e
-		} else {
-			err = fmt.Errorf("%s\n%s", err, e)
-		}
-	}
-	return err
-}
-
-func reportOwnedWantedParts(blUser *BrickLinkUserClient) {
-	var wanted [][]WantedItem
-	var sources [][]WantedItem
+func reportOwnedWantedParts(blUser *bricklinkuser.Client) {
+	var wanted [][]bricklinkuser.WantedItem
+	var sources [][]bricklinkuser.WantedItem
 	defaultList, err := blUser.GetWantedList(0)
 	if err != nil {
 		log.Fatal(err)
@@ -262,7 +117,7 @@ func reportOwnedWantedParts(blUser *BrickLinkUserClient) {
 			}
 		}
 	}
-	wantedMap := make(map[string][]WantedItem)
+	wantedMap := make(map[string][]bricklinkuser.WantedItem)
 	for _, items := range wanted {
 		for _, item := range items {
 			if item.WantedQty > item.WantedQtyFilled {
@@ -271,7 +126,7 @@ func reportOwnedWantedParts(blUser *BrickLinkUserClient) {
 			}
 		}
 	}
-	sourceMap := make(map[string][]WantedItem)
+	sourceMap := make(map[string][]bricklinkuser.WantedItem)
 	for _, items := range sources {
 		for _, item := range items {
 			key := item.ItemNumber + ";" + item.ColorName

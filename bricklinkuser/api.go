@@ -1,12 +1,13 @@
-package main
+package bricklinkuser
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"reflect"
 
+	"github.com/andrewarchi/brick-apis/credentials"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -15,22 +16,22 @@ const (
 	cloneBase    = "https://www.bricklink.com/ajax/clone"
 )
 
-type BrickLinkUserClient struct {
+type Client struct {
 	client      *http.Client
-	credentials BrickLinkCredentials
+	credentials credentials.BrickLinkUser
 }
 
-func NewBrickLinkUserClient(cred *BrickLinkCredentials) (*BrickLinkUserClient, error) {
+func NewClient(cred *credentials.BrickLinkUser) (*Client, error) {
 	jar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &BrickLinkUserClient{&http.Client{Jar: jar}, *cred}, nil
+	return &Client{&http.Client{Jar: jar}, *cred}, nil
 }
 
-func (c *BrickLinkUserClient) Login() error {
+func (c *Client) Login() error {
 	_, err := c.client.PostForm(renovateBase+"/loginandout.ajax", url.Values{
 		"userid":          {c.credentials.Username},
 		"password":        {c.credentials.Password},
@@ -39,38 +40,34 @@ func (c *BrickLinkUserClient) Login() error {
 	return err
 }
 
-func (c *BrickLinkUserClient) GetWantedList(id int64) (*WantedListResults, error) {
+func (c *Client) GetWantedList(id int64) (*WantedListResults, error) {
 	url := fmt.Sprintf(cloneBase+"/wanted/search2.ajax?wantedMoreID=%d", id)
-	var response WantedListResponse
-	if err := c.doRequest(url, fmt.Sprintf("Wanted List %d", id), fmt.Sprintf("wl-%d.json", id), &response); err != nil {
+	var wantedList WantedListResponse
+	if err := c.doGet(url, &wantedList); err != nil {
 		return nil, err
 	}
-	return &response.Results, nil
+	return &wantedList.Results, checkResponse(wantedList.ReturnCode, wantedList.ReturnMessage)
 }
 
-func (c *BrickLinkUserClient) doRequest(url, tag, fileName string, v interface{}) error {
+func (c *Client) doGet(url string, v interface{}) error {
 	resp, err := c.client.Get(url)
-	printResponseCode(tag, resp)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	if err := decodeAndWrite(resp.Body, v, fileName); err != nil {
-		return err
-	}
-	f := reflect.ValueOf(v)
-	if f != reflect.ValueOf(nil) {
-		response := f.Interface().(*WantedListResponse)
-		if response.ReturnMessage != "OK" {
-			return fmt.Errorf("Response is not OK: %v", response)
-		}
+	return json.NewDecoder(resp.Body).Decode(v)
+}
+
+func checkResponse(returnCode int, message string) error {
+	if returnCode != 0 {
+		return fmt.Errorf("return code %d %s", returnCode, message)
 	}
 	return nil
 }
 
 type WantedListResponse struct {
 	Results        WantedListResults `json:"results"`
-	ReturnCode     int64             `json:"returnCode"`
+	ReturnCode     int               `json:"returnCode"`
 	ReturnMessage  string            `json:"returnMessage"`
 	ErrorTicket    int64             `json:"errorTicket"`
 	ProcessingTime int64             `json:"procssingTime"`
