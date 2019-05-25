@@ -149,23 +149,23 @@ type Cost struct {
 
 // OrderItem is an item contained in an order
 type OrderItem struct {
-	InventoryID        int64        `json:"inventory_id"`                 // The ID of the inventory that includes the item
-	Item               CatalogItem  `json:"item"`                         // An object representation of the item
-	ColorID            int64        `json:"color_id"`                     // The ID of the color of the item
-	ColorName          string       `json:"color_name"`                   // Color name of the item
-	Quantity           int64        `json:"quantity"`                     // The number of items purchased in this order
-	NewOrUsed          NewOrUsed    `json:"new_or_used"`                  // Indicates whether the item is new or used (N: New, U: Used)
-	Completeness       Completeness `json:"completeness,omitempty"`       // Indicates whether the set is complete or incomplete. This value is valid only for SET type. (C: Complete, B: Incomplete, S: Sealed)
-	UnitPrice          float64      `json:"unit_price,string"`            // The original price of this item per sale unit
-	UnitPriceFinal     float64      `json:"unit_price_final,string"`      // The unit price of this item after applying tiered pricing policy
-	DispUnitPrice      float64      `json:"disp_unit_price,string"`       // The original price of this item per sale unit in display currency of the user
-	DispUnitPriceFinal float64      `json:"disp_unit_price_final,string"` // The unit price of this item after applying tiered pricing policy in display currency of the user
-	CurrencyCode       CurrencyCode `json:"currency_code"`                // The currency code of the price
-	DispCurrencyCode   CurrencyCode `json:"disp_currency_code"`           // The display currency code of the user
-	Description        string       `json:"description"`                  // User remarks of the order item
-	Remarks            string       `json:"remarks"`                      // User description of the order item
-	Weight             float64      `json:"weight,string"`                // The weight of the item that overrides the catalog weight
-	OrderCost          float64      `json:"order_cost,string"`
+	InventoryID           int64        `json:"inventory_id"`                 // The ID of the inventory that includes the item
+	Item                  CatalogItem  `json:"item"`                         // An object representation of the item
+	ColorID               int64        `json:"color_id"`                     // The ID of the color of the item
+	ColorName             string       `json:"color_name"`                   // Color name of the item
+	Quantity              int64        `json:"quantity"`                     // The number of items purchased in this order
+	NewOrUsed             NewOrUsed    `json:"new_or_used"`                  // Indicates whether the item is new or used (N: New, U: Used)
+	Completeness          Completeness `json:"completeness,omitempty"`       // Indicates whether the set is complete or incomplete. This value is valid only for SET type. (C: Complete, B: Incomplete, S: Sealed)
+	UnitPrice             float64      `json:"unit_price,string"`            // The original price of this item per sale unit
+	UnitPriceFinal        float64      `json:"unit_price_final,string"`      // The unit price of this item after applying tiered pricing policy
+	UnitPriceDisplay      float64      `json:"disp_unit_price,string"`       // The original price of this item per sale unit in display currency of the user
+	UnitPriceFinalDisplay float64      `json:"disp_unit_price_final,string"` // The unit price of this item after applying tiered pricing policy in display currency of the user
+	CurrencyCode          CurrencyCode `json:"currency_code"`                // The currency code of the price
+	CurrencyCodeDisplay   CurrencyCode `json:"disp_currency_code"`           // The display currency code of the user
+	Description           string       `json:"description"`                  // User remarks of the order item
+	Remarks               string       `json:"remarks"`                      // User description of the order item
+	Weight                float64      `json:"weight,string"`                // The weight of the item that overrides the catalog weight
+	OrderCost             float64      `json:"order_cost,string"`
 }
 
 type OrderStatus string
