@@ -14,38 +14,38 @@ func (c *Client) SearchProduct() (*SearchProduct, error) {
 }
 
 type SearchProduct struct {
-	TotalCount     int64         `json:"total_count"`
-	ColorID        int64         `json:"idColor"`
-	ResultsPerPage int64         `json:"rpp"`
-	PageIndex      int64         `json:"pi"`
+	TotalCount     int           `json:"total_count"`
+	ColorID        int           `json:"idColor"`
+	ResultsPerPage int           `json:"rpp"`
+	PageIndex      int           `json:"pi"`
 	List           []ProductList `json:"list"`
-	ReturnCode     int64         `json:"returnCode"`
+	ReturnCode     int           `json:"returnCode"`
 	ReturnMessage  string        `json:"returnMessage"`
-	ErrorTicket    int64         `json:"errorTicket"`
-	ProcessingTime int64         `json:"procssingTime"`
+	ErrorTicket    int           `json:"errorTicket"`
+	ProcessingTime int           `json:"procssingTime"`
 }
 
 type ProductList struct {
-	InvID                  int64        `json:"idInv"`
+	InvID                  int          `json:"idInv"`
 	Description            string       `json:"strDesc"`
 	NewOrUsed              NewOrUsed    `json:"codeNew"`
 	Completeness           Completeness `json:"codeComplete"`
-	Quantity               int64        `json:"n4Qty"`
-	ColorID                int64        `json:"idColor"`
-	ColorIDDefault         int64        `json:"idColorDefault"`
+	Quantity               int          `json:"n4Qty"`
+	ColorID                int          `json:"idColor"`
+	ColorIDDefault         int          `json:"idColorDefault"`
 	Color                  string       `json:"strColor"`
 	ImageURL               string       `json:"strInvImgUrl"`           // URL of image provided by seller
-	ImageID                int64        `json:"idInvImg"`               // ID of Image provided by seller
+	ImageID                int          `json:"idInvImg"`               // ID of Image provided by seller
 	ImageType              ImageType    `json:"typeInvImg"`             // Type of Image provided by seller
 	ImageTypeDefault       ImageType    `json:"typeImgDefault"`         // Default catalog image type
-	HasExtendedDescription int64        `json:"hasExtendedDescription"` // Has an extended description (0: false, 1: true)
+	HasExtendedDescription int          `json:"hasExtendedDescription"` // Has an extended description (0: false, 1: true)
 	InstantCheckout        bool         `json:"instantCheckout"`
 	SalePrice              string       `json:"mInvSalePrice"`     // Sale price in currency of store
 	SalePriceDisplay       string       `json:"mDisplaySalePrice"` // Sale price in display currency of user
-	SalePercent            int64        `json:"nSalePct"`          // Percent discounted
-	Tier1Quantity          int64        `json:"nTier1Qty"`
-	Tier2Quantity          int64        `json:"nTier2Qty"`
-	Tier3Quantity          int64        `json:"nTier3Qty"`
+	SalePercent            int          `json:"nSalePct"`          // Percent discounted
+	Tier1Quantity          int          `json:"nTier1Qty"`
+	Tier2Quantity          int          `json:"nTier2Qty"`
+	Tier3Quantity          int          `json:"nTier3Qty"`
 	Tier1Price             string       `json:"nTier1InvPrice"`     // Price in currency of store
 	Tier2Price             string       `json:"nTier2InvPrice"`     // Price in currency of store
 	Tier3Price             string       `json:"nTier3InvPrice"`     // Price in currency of store
@@ -54,10 +54,10 @@ type ProductList struct {
 	Tier3PriceDisplay      string       `json:"nTier3DisplayPrice"` // Price in display currency of user
 	Category               string       `json:"strCategory"`
 	StoreName              string       `json:"strStorename"`
-	StoreCurrencyID        int64        `json:"idCurrencyStore"`
+	StoreCurrencyID        int          `json:"idCurrencyStore"`
 	MinBuy                 string       `json:"mMinBuy"`
 	SellerUsername         string       `json:"strSellerUsername"`
-	SellerFeedbackScore    int64        `json:"n4SellerFeedbackScore"`
+	SellerFeedbackScore    int          `json:"n4SellerFeedbackScore"`
 	SellerCountryName      string       `json:"strSellerCountryName"`
 	SellerCountryCode      string       `json:"strSellerCountryCode"`
 }
@@ -89,7 +89,7 @@ const (
 // This API is called when clicking on an item in a store to show the details modal.
 // The type information is currently incomplete and no examples have been found using the URL parameter wantedMoreArrayID.
 func (c *Client) GetStoreItem(invID, storeID, wantedListArrayID string) (*StoreItem, error) {
-	url := fmt.Sprintf("%s/store/item.ajax?invID=%s&sid=%s&wantedMoreArrayID=%s", invID, storeID, wantedListArrayID)
+	url := fmt.Sprintf("%s/store/item.ajax?invID=%s&sid=%s&wantedMoreArrayID=%s", cloneStoreBase, invID, storeID, wantedListArrayID)
 	var storeItem StoreItem
 	if err := c.doGet(url, &storeItem); err != nil {
 		return nil, err
@@ -98,79 +98,86 @@ func (c *Client) GetStoreItem(invID, storeID, wantedListArrayID string) (*StoreI
 }
 
 type StoreItem struct {
-	InvID               int64          `json:"invID"`
-	Description         string         `json:"description"`
-	ExtendedDescription string         `json:"extDescription"`
-	InvQty              int64          `json:"invQty"`
-	InvBulk             int64          `json:"invBulk"`
-	InvSale             int64          `json:"invSale"`
-	ItemType            string         `json:"itemType"`
-	InvNew              string         `json:"invNew"`
-	ColorID             int64          `json:"colorID"`
-	ColorName           string         `json:"colorName"`
-	ColorHex            string         `json:"colorHex"`
-	InvDate             string         `json:"invDate"`
-	ItemNo              string         `json:"itemNo"`
-	ItemSeq             int64          `json:"itemSeq"`
-	ItemID              int64          `json:"itemID"`
-	ItemName            string         `json:"itemName"`
-	ItemStatus          string         `json:"itemStatus"`
-	ItemBrand           int64          `json:"itemBrand"`
-	InvComplete         string         `json:"invComplete"`
-	NativePrice         string         `json:"nativePrice"`
-	SalePrice           string         `json:"salePrice"`
-	InvPrice            string         `json:"invPrice"`
-	InvTierQty1         int64          `json:"invTierQty1"`
-	InvTierQty2         int64          `json:"invTierQty2"`
-	InvTierQty3         int64          `json:"invTierQty3"`
-	InvTierPrice1       string         `json:"invTierPrice1"`
-	InvTierPrice2       string         `json:"invTierPrice2"`
-	InvTierPrice3       string         `json:"invTierPrice3"`
-	InvTierNativePrice1 string         `json:"invTierNativePrice1"`
-	InvTierNativePrice2 string         `json:"invTierNativePrice2"`
-	InvTierNativePrice3 string         `json:"invTierNativePrice3"`
-	CartQty             int64          `json:"cartQty"`
-	CartBindQty         int64          `json:"cartBindQty"`
-	InvBindID           int64          `json:"invBindID"`
-	InvBindQty          int64          `json:"invBindQty"`
-	InvImageID          int64          `json:"invImgID"`
-	InvImageType        string         `json:"invImgType"`
-	InvURL              string         `json:"invURL"`
-	ImageURL            string         `json:"imgURL"`
-	LargeImages         []LargeImage   `json:"largeImgs"`
-	CategoryInfo        []CategoryInfo `json:"catInfo"`
-	DuplicateItems      []interface{}  `json:"duplicateItems"`
-	NewLotIDLink        int64          `json:"newLotIDLink"`
-	UsedLotIDLink       int64          `json:"usedLotIDLink"`
-	ColorItems          []ColorItem    `json:"colorItems"`
-	ItemRels            []interface{}  `json:"itemRels"`
-	ItemRelLots         []interface{}  `json:"itemRelLots"`
-	Recommended         []interface{}  `json:"recommended"`
-	Wanted              Wanted         `json:"wanted"`
-	ReturnCode          int64          `json:"returnCode"`
-	ReturnMessage       string         `json:"returnMessage"`
-	ErrorTicket         int64          `json:"errorTicket"`
-	ProcessingTime      int64          `json:"procssingTime"`
+	InvID               int                     `json:"invID"`
+	Description         string                  `json:"description"`
+	InvDescription      string                  `json:"invDescription"` // Found in React, not confirmed to be in json
+	ExtendedDescription string                  `json:"extDescription"`
+	InvQuantity         int                     `json:"invQty"`
+	InvBulk             int                     `json:"invBulk"`
+	InvSale             int                     `json:"invSale"`
+	BulkQuantity        int                     `json:"bulkQty"` // Found in React, not confirmed to be in json
+	ItemType            string                  `json:"itemType"`
+	InvNew              string                  `json:"invNew"` // "N": New, "U": Used
+	ColorID             int                     `json:"colorID"`
+	ColorName           string                  `json:"colorName"`
+	ColorHex            string                  `json:"colorHex"`
+	InvDate             string                  `json:"invDate"`
+	ItemNo              string                  `json:"itemNo"`
+	ItemSeq             int                     `json:"itemSeq"`
+	ItemID              int                     `json:"itemID"`
+	ItemName            string                  `json:"itemName"`
+	ItemStatus          string                  `json:"itemStatus"`
+	ItemBrand           int                     `json:"itemBrand"`
+	InvComplete         string                  `json:"invComplete"`
+	NativePrice         string                  `json:"nativePrice"`
+	SalePrice           string                  `json:"salePrice"`
+	SalePercent         int                     `json:"salePercent"` // Found in React, not confirmed to be in json
+	InvPrice            string                  `json:"invPrice"`
+	InvTier1Quantity    int                     `json:"invTierQty1"`
+	InvTier2Quantity    int                     `json:"invTierQty2"`
+	InvTier3Quantity    int                     `json:"invTierQty3"`
+	InvTier1Price       string                  `json:"invTierPrice1"`
+	InvTier2Price       string                  `json:"invTierPrice2"`
+	InvTier3Price       string                  `json:"invTierPrice3"`
+	InvTier1NativePrice string                  `json:"invTierNativePrice1"`
+	InvTier2NativePrice string                  `json:"invTierNativePrice2"`
+	InvTier3NativePrice string                  `json:"invTierNativePrice3"`
+	CartQuantity        int                     `json:"cartQty"`
+	CartBindQuantity    int                     `json:"cartBindQty"`
+	InvBindID           int                     `json:"invBindID"`
+	InvBindQuantity     int                     `json:"invBindQty"`
+	InvImageID          int                     `json:"invImgID"`
+	InvImageType        string                  `json:"invImgType"`
+	InvURL              string                  `json:"invURL"`
+	ImageURL            string                  `json:"imgURL"`
+	NewItemImage        string                  `json:"newItemImg"` // Found in React, not confirmed to be in json
+	LargeImages         []LargeImage            `json:"largeImgs"`
+	CategoryInfo        []StoreItemCategoryInfo `json:"catInfo"`
+	SuperLotID          int                     `json:"superlotID"`  // Found in React, not confirmed to be in json
+	SuperLotQuantity    int                     `json:"superlotQty"` // Found in React, not confirmed to be in json
+	DuplicateItems      []interface{}           `json:"duplicateItems"`
+	NewLotIDLink        int                     `json:"newLotIDLink"`
+	UsedLotIDLink       int                     `json:"usedLotIDLink"`
+	ColorItems          []ColorItem             `json:"colorItems"`
+	ItemRels            []interface{}           `json:"itemRels"`
+	ItemRelLots         []interface{}           `json:"itemRelLots"`
+	Recommended         []interface{}           `json:"recommended"`
+	Wanted              Wanted                  `json:"wanted"`
+	CartErrorMessage    string                  `json:"cartErrorMsg"`
+	ReturnCode          int                     `json:"returnCode"`
+	ReturnMessage       string                  `json:"returnMessage"`
+	ErrorTicket         int                     `json:"errorTicket"`
+	ProcessingTime      int                     `json:"procssingTime"`
 }
 
-type CategoryInfo struct {
-	CategoryID    int64  `json:"catID"`
+type StoreItemCategoryInfo struct {
+	CategoryID    int    `json:"catID"`
 	CategoryName  string `json:"catName"`
-	CategoryLevel int64  `json:"catLevel"`
+	CategoryLevel int    `json:"catLevel"`
 }
 
 type LargeImage struct {
-	ImageID        int64       `json:"idImg"`
+	ImageID        int         `json:"idImg"`
 	TypeImageSmall interface{} `json:"typeImgS"`
 	TypeImageLarge interface{} `json:"typeImgL"`
 	URLSmall       string      `json:"strUrlS"`
 	URLLarge       string      `json:"strUrlL"`
-	ColorID        int64       `json:"idColor"`
+	ColorID        int         `json:"idColor"`
 }
 
 type ColorItem struct {
-	InvID     int64  `json:"invID"`
-	ColorID   int64  `json:"colorID"`
+	InvID     int    `json:"invID"`
+	ColorID   int    `json:"colorID"`
 	ColorHex  string `json:"colorHex"`
 	ColorName string `json:"colorName"`
 }
@@ -180,22 +187,22 @@ type Wanted struct {
 	WantedMoreName       string              `json:"wantedMoreName"`
 	WantedRemarks        string              `json:"wantedRemarks"`
 	WantedPrice          string              `json:"wantedPrice"`
-	WantedQuantity       int64               `json:"wantedQty"`
-	WantedQuantityFilled int64               `json:"wantedQtyFilled"`
+	WantedQuantity       int                 `json:"wantedQty"`
+	WantedQuantityFilled int                 `json:"wantedQtyFilled"`
 	WantedQuantityHasAll bool                `json:"wantedQtyHasAll"`
 	QuantityWarn         bool                `json:"qtyWarn"`
 	PriceWarn            bool                `json:"priceWarn"`
-	WantedListCount      int64               `json:"wantedListCnt"`
+	WantedListCount      int                 `json:"wantedListCnt"`
 }
 
 type WantedListSummary struct {
-	ID             int64  `json:"id"`
+	ID             int    `json:"id"`
 	Name           string `json:"name"`
 	Description    string `json:"desc"`
 	Remarks        string `json:"remarks"`
 	Condition      string `json:"condition"`
-	Quantity       int64  `json:"qty"`
-	QuantityFilled int64  `json:"qtyFilled"`
+	Quantity       int    `json:"qty"`
+	QuantityFilled int    `json:"qtyFilled"`
 	QuantityWarn   bool   `json:"qtyWarn"`
 	Price          string `json:"price"`
 	PriceWarn      bool   `json:"priceWarn"`
