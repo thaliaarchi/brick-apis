@@ -35,7 +35,9 @@ func (c *Client) doGet(url string, v interface{}) error {
 		return fmt.Errorf("status %s", resp.Status)
 	}
 	defer resp.Body.Close()
-	return json.NewDecoder(resp.Body).Decode(v)
+	decoder := json.NewDecoder(resp.Body)
+	decoder.DisallowUnknownFields()
+	return decoder.Decode(v)
 }
 
 func (c *Client) doGetAndSave(url string, v interface{}, filename string) error {
@@ -71,6 +73,7 @@ func (c *Client) doGetAndSave(url string, v interface{}, filename string) error 
 
 	go func() {
 		decoder := json.NewDecoder(pr)
+		decoder.DisallowUnknownFields()
 		if err := decoder.Decode(&v); err != nil {
 			errs <- err
 		}

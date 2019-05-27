@@ -47,7 +47,9 @@ func (c *LegoBAPClient) doGet(url string, v interface{}) error {
 		return err
 	}
 	defer resp.Body.Close()
-	return json.NewDecoder(resp.Body).Decode(v)
+	decoder := json.NewDecoder(resp.Body)
+	decoder.DisallowUnknownFields()
+	return decoder.Decode(v)
 }
 
 type ProductInformation struct {

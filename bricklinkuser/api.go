@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 
 	"github.com/andrewarchi/brick-apis/credentials"
 	"golang.org/x/net/publicsuffix"
@@ -73,10 +75,66 @@ func (c *Client) doGet(url string, v interface{}) error {
 		return err
 	}
 	defer resp.Body.Close()
-	return json.NewDecoder(resp.Body).Decode(v)
+	decoder := json.NewDecoder(resp.Body)
+	decoder.DisallowUnknownFields()
+	return decoder.Decode(v)
 }
 
-func checkResponse(returnCode int64, message string) error {
+func (c *Client) doGetAndSave(url string, v interface{}, filename string) error {
+	file, err := os.Create("../data/" + filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	resp, err := c.client.Get(url)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode/100 != 2 {
+		return fmt.Errorf("status %s", resp.Status)
+	}
+	defer resp.Body.Close()
+
+	pr, pw := io.Pipe()
+	tr := io.TeeReader(resp.Body, pw)
+
+	done := make(chan bool)
+	errs := make(chan error)
+	defer close(done)
+
+	go func() {
+		defer pw.Close()
+		if _, err := io.Copy(file, tr); err != nil {
+			errs <- err
+		}
+		done <- true
+	}()
+
+	go func() {
+		decoder := json.NewDecoder(pr)
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&v); err != nil {
+			errs <- err
+		}
+		done <- true
+	}()
+
+	<-done
+	<-done
+	close(errs)
+	err = nil
+	for e := range errs {
+		if err == nil {
+			err = e
+		} else {
+			err = fmt.Errorf("%s\n%s", err, e)
+		}
+	}
+	return err
+}
+
+func checkResponse(returnCode int, message string) error {
 	if returnCode != 0 {
 		return fmt.Errorf("return code %d %s", returnCode, message)
 	}
@@ -85,35 +143,35 @@ func checkResponse(returnCode int64, message string) error {
 
 type wantedListResponse struct {
 	Results        WantedListResults `json:"results"`
-	ReturnCode     int64             `json:"returnCode"`
+	ReturnCode     int               `json:"returnCode"`
 	ReturnMessage  string            `json:"returnMessage"`
-	ErrorTicket    int64             `json:"errorTicket"`
-	ProcessingTime int64             `json:"procssingTime"`
+	ErrorTicket    int               `json:"errorTicket"`
+	ProcessingTime int               `json:"procssingTime"`
 }
 
 type WantedListResults struct {
 	ItemOptions    ItemOptions     `json:"itemOptions"`
-	TotalResults   int64           `json:"totalResults"`
+	TotalResults   int             `json:"totalResults"`
 	WantedLists    []WantedList    `json:"lists"`
 	WantedItems    []WantedItem    `json:"wantedItems"`
 	CategoryGroups []CategoryGroup `json:"categories"`
-	ItemCount      int64           `json:"totalCnt"`
+	ItemCount      int             `json:"totalCnt"`
 	WantedListInfo WantedListInfo  `json:"wantedListInfo"`
-	SearchMode     int64           `json:"searchMode"`
-	EmptySearch    int64           `json:"emptySearch"`
+	SearchMode     int             `json:"searchMode"`
+	EmptySearch    int             `json:"emptySearch"`
 }
 
 type CategoryGroup struct {
-	ItemType   ItemType   `json:"type"`
-	Categories []Category `json:"cats"`
-	Total      int64      `json:"total"`
+	ItemType   ItemType       `json:"type"`
+	Categories []CategoryInfo `json:"cats"`
+	Total      int            `json:"total"`
 }
 
-type Category struct {
+type CategoryInfo struct {
 	CategoryName string `json:"catName"`
-	CategoryID   int64  `json:"catID"`
-	Count        int64  `json:"cnt"`
-	InvCount     int64  `json:"invCnt"`
+	CategoryID   int    `json:"catID"`
+	Count        int    `json:"cnt"`
+	InvCount     int    `json:"invCnt"`
 }
 
 type ItemOptions struct {
@@ -121,29 +179,29 @@ type ItemOptions struct {
 }
 
 type WantedList struct {
-	ID   int64  `json:"id"`
+	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
 type WantedItem struct {
-	WantedID          int64           `json:"wantedID"`
-	WantedListID      int64           `json:"wantedMoreID"`
+	WantedID          int             `json:"wantedID"`
+	WantedListID      int             `json:"wantedMoreID"`
 	WantedListName    string          `json:"wantedMoreName"`
 	ItemNumber        string          `json:"itemNo"`
-	ItemID            int64           `json:"itemID"`
-	ItemSeq           int64           `json:"itemSeq"`
+	ItemID            int             `json:"itemID"`
+	ItemSeq           int             `json:"itemSeq"`
 	ItemName          string          `json:"itemName"`
 	ItemType          ItemType        `json:"itemType"`
-	ItemBrand         int64           `json:"itemBrand"`
+	ItemBrand         int             `json:"itemBrand"`
 	ImageURL          string          `json:"imgURL"`
-	WantedQty         int64           `json:"wantedQty"`
-	WantedQtyFilled   int64           `json:"wantedQtyFilled"`
+	WantedQty         int             `json:"wantedQty"`
+	WantedQtyFilled   int             `json:"wantedQtyFilled"`
 	WantedCondition   WantedCondition `json:"wantedNew"`
 	WantedNotify      WantedNotify    `json:"wantedNotify"`
-	WantedRemark      *string         `json:"wantedRemark"`
+	WantedRemark      string          `json:"wantedRemark"`
 	WantedPrice       float64         `json:"wantedPrice"`
 	FormatWantedPrice string          `json:"formatWantedPrice"`
-	ColorID           int64           `json:"colorID"`
+	ColorID           int             `json:"colorID"`
 	ColorName         string          `json:"colorName"`
 	ColorHex          string          `json:"colorHex"`
 }
@@ -151,8 +209,8 @@ type WantedItem struct {
 type WantedListInfo struct {
 	Name           string  `json:"name"`
 	Description    string  `json:"desc"`
-	ItemCount      int64   `json:"num"`
-	ID             int64   `json:"id"`
+	ItemCount      int     `json:"num"`
+	ID             int     `json:"id"`
 	CurrencySymbol string  `json:"curSymbol"`
 	Completion     float64 `json:"progress"`
 }
