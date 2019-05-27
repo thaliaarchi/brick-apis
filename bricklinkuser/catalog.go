@@ -89,7 +89,7 @@ const (
 // This API is called when clicking on an item in a store to show the details modal.
 // The type information is currently incomplete and no examples have been found using the URL parameter wantedMoreArrayID.
 func (c *Client) GetStoreItem(invID, storeID, wantedListArrayID string) (*StoreItem, error) {
-	url := fmt.Sprintf("%s/store/item.ajax?invID=%s&sid=%s&wantedMoreArrayID=%s", invID, storeID, wantedListArrayID)
+	url := fmt.Sprintf("%s/store/item.ajax?invID=%s&sid=%s&wantedMoreArrayID=%s", cloneBase, invID, storeID, wantedListArrayID)
 	var storeItem StoreItem
 	if err := c.doGet(url, &storeItem); err != nil {
 		return nil, err
