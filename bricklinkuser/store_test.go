@@ -3,15 +3,30 @@ package bricklinkuser
 import (
 	"encoding/json"
 	"io/ioutil"
+	"net/url"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/andrewarchi/brick-apis/credentials"
+)
+
+var (
+	username = os.Getenv("BRICKLINK_USERNAME")
+	password = os.Getenv("BRICKLINK_PASSWORD")
 )
 
 func TestAddToCart(t *testing.T) {
-
-	t.Error(AddToCart("596847", []CartItemSimple{{ID: 170802686, Quantity: "1", SellerID: 596847, SourceType: 1}}))
-
+	t.SkipNow()
+	c, err := NewClient(&credentials.BrickLinkUser{Username: username, Password: password})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Login(); err != nil {
+		t.Fatal(err)
+	}
+	t.Error(c.AddToCart("596847", []CartItemSimple{{ID: 170802686, Quantity: "1", SellerID: 596847, SourceType: 1}}))
 }
 
 func TestGetAddToCartQuery(t *testing.T) {
@@ -19,8 +34,11 @@ func TestGetAddToCartQuery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if query != "itemArray=%5B%7B%22invID%22%3A170802686%2C%22invQty%22%3A%221%22%2C%22sellerID%22%3A596847%2C%22sourceType%22%3A1%7D%5D&sid=596847" {
-		t.Error("expected correct value")
+	expected := url.Values{}
+	expected.Add("sid", "596847")
+	expected.Add("itemArray", `[{"invID":170802686,"invQty":"1","sellerID":596847,"sourceType":1}]`)
+	if !reflect.DeepEqual(expected, query) {
+		t.Errorf("Values don't match Expected:%v, Actual:%v", expected, query)
 	}
 }
 

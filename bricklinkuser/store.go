@@ -1,14 +1,9 @@
 package bricklinkuser
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
-	"io/ioutil"
-	"net/http"
 	"net/url"
-	"strings"
 )
 
 // CartItemSimple is a simplified representation of an item used to add the item to a cart
@@ -119,37 +114,32 @@ type CartItemDetail struct {
 }
 
 // AddToCart is used to add a list of items to a user's cart
-func AddToCart(sid string, itemArray []CartItemSimple) (*AddToCartResponse, error) {
+func (c *Client) AddToCart(sid string, itemArray []CartItemSimple) (*AddToCartResponse, error) {
 	q, err := getAddToCartQuery(sid, itemArray)
 	if err != nil {
 		return nil, err
 	}
-	url := cloneBase + "/cart/add.ajax"
-	resp, err := http.Post(url, "application/x-www-form-urlencoded; charset=UTF-8", strings.NewReader(q))
+	resp, err := c.client.PostForm(cloneBase+"/cart/add.ajax", q)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	return decodeCartReturn(resp.Body)
+}
 
-	var buf bytes.Buffer
-	buf.ReadFrom(resp.Body)
-	fmt.Println(buf.String())
-	return decodeCartReturn(ioutil.NopCloser(strings.NewReader(buf.String())))
+func getAddToCartQuery(sid string, itemArray []CartItemSimple) (url.Values, error) {
+	values := url.Values{}
+	data, err := json.Marshal(itemArray)
+	if err != nil {
+		return nil, err
+	}
+	values.Add("itemArray", string(data))
+	values.Add("sid", sid)
+	return values, nil
 }
 
 func decodeCartReturn(r io.ReadCloser) (*AddToCartResponse, error) {
 	defer r.Close()
 	retVal := &AddToCartResponse{}
 	return retVal, json.NewDecoder(r).Decode(retVal)
-}
-
-func getAddToCartQuery(sid string, itemArray []CartItemSimple) (string, error) {
-	values := url.Values{}
-	data, err := json.Marshal(itemArray)
-	if err != nil {
-		return "", err
-	}
-	values.Add("itemArray", string(data))
-	values.Add("sid", sid)
-	return values.Encode(), nil
 }
