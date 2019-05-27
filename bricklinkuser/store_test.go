@@ -2,15 +2,20 @@ package bricklinkuser
 
 import (
 	"encoding/json"
-	"io"
 	"io/ioutil"
 	"reflect"
 	"strings"
 	"testing"
 )
 
+func TestAddToCart(t *testing.T) {
+
+	t.Error(AddToCart("596847", []CartItemSimple{{ID: 170802686, Quantity: "1", SellerID: 596847, SourceType: 1}}))
+
+}
+
 func TestGetAddToCartQuery(t *testing.T) {
-	query, err := getAddToCartQuery("596847", []cartItem{{ID: 170802686, Quantity: "1", SellerID: 596847, SourceType: 1}})
+	query, err := getAddToCartQuery("596847", []CartItemSimple{{ID: 170802686, Quantity: "1", SellerID: 596847, SourceType: 1}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,18 +33,18 @@ func TestConvertCartReturnJSON(t *testing.T) {
 	data, _ := json.Marshal(r)
 	compareStrings(string(data), jsonText, t)
 
-	expected := addToCartResponse{
+	expected := AddToCartResponse{
 		Errors:           0,
-		ItemReturnStatus: []itemReturnStatus{{170057995, "0", "OK", 1189138}},
-		Carts: []addToCartCart{{
+		ItemReturnStatus: []ItemReturnStatus{{170057995, "0", "OK", 1189138}},
+		Carts: []StoreCart{{
 			SellerID:   1189138,
 			VATPct:     1,
 			SellerName: "djinn",
 			StoreName:  "Me and my bricks",
 			CountryID:  "NO",
 			Feedback:   22,
-			CurrentCart: currentCart{
-				Items: []cartItemFull{{
+			CurrentCart: CartItems{
+				Items: []CartItemDetail{{
 					ItemName:                      "Death Star",
 					InventoryDescription:          "Deathstar has all bricks accounted for, including building-instructions.\nWithout minifigures or weapons.",
 					InventoryID:                   170057995,
@@ -130,10 +135,4 @@ func compareStrings(s1, s2 string, t *testing.T) {
 			return
 		}
 	}
-}
-
-func decodeCartReturn(r io.ReadCloser) (*addToCartResponse, error) {
-	defer r.Close()
-	retVal := &addToCartResponse{}
-	return retVal, json.NewDecoder(r).Decode(retVal)
 }

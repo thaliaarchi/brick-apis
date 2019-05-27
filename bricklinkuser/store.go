@@ -1,21 +1,29 @@
 package bricklinkuser
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
 	"net/url"
+	"strings"
 )
 
-type cartItem struct {
+// CartItemSimple is a simplified representation of an item used to add the item to a cart
+type CartItemSimple struct {
 	ID         int    `json:"invID"`
 	Quantity   string `json:"invQty"`
 	SellerID   int    `json:"sellerID"`
 	SourceType int    `json:"sourceType"`
 }
 
-type addToCartResponse struct {
+// AddToCartResponse is the reply given from the AddToCart method
+type AddToCartResponse struct {
 	Errors              int                `json:"errors"`
-	ItemReturnStatus    []itemReturnStatus `json:"itemReturnStatus"`
-	Carts               []addToCartCart    `json:"carts"`
+	ItemReturnStatus    []ItemReturnStatus `json:"itemReturnStatus"`
+	Carts               []StoreCart        `json:"carts"`
 	TotalStoreCartCount int                `json:"totStoreCartCnt"`
 	CartItemErrorCode   int                `json:"cartItemErrorCode"`
 	ReturnCode          int                `json:"returnCode"`
@@ -24,39 +32,43 @@ type addToCartResponse struct {
 	ProcessingTime      int                `json:"procssingTime"`
 }
 
-type itemReturnStatus struct {
+// ItemReturnStatus provides information regarding itms to be returned
+type ItemReturnStatus struct {
 	InventoryID int    `json:"invID"`
 	Code        string `json:"code"`
 	Message     string `json:"msg"`
 	SID         int    `json:"sid"`
 }
 
-type addToCartCart struct {
-	SellerID    int         `json:"sellerID"`
-	VATPct      int         `json:"vatPct"`
-	SellerName  string      `json:"sellerName"`
-	StoreName   string      `json:"storeName"`
-	CountryID   string      `json:"countryID"`
-	Feedback    int         `json:"feedback"`
-	CurrentCart currentCart `json:"current_cart"`
+// StoreCart groups together all the items a buyer would like to buy from a store
+type StoreCart struct {
+	SellerID    int       `json:"sellerID"`
+	VATPct      int       `json:"vatPct"`
+	SellerName  string    `json:"sellerName"`
+	StoreName   string    `json:"storeName"`
+	CountryID   string    `json:"countryID"`
+	Feedback    int       `json:"feedback"`
+	CurrentCart CartItems `json:"current_cart"`
 }
 
-type currentCart struct {
-	Items               []cartItemFull `json:"items"`
-	Superlots           []string       `json:"superlots"`
-	TotalItems          int            `json:"totalItems"`
-	TotalLots           int            `json:"totalLots"`
-	TotalPrice          string         `json:"totalPrice"`
-	TotalNativePrice    string         `json:"totalNativePrice"`
-	TotalWarnings       int            `json:"totalWarnings"`
-	TotalNativePriceRaw string         `json:"totalNativePriceRaw"`
-	TotalWeightGrams    string         `json:"totalWeightGrams"`
-	TotalWeightOunces   string         `json:"totalWeightOunces"`
-	WeightUnknownLots   int            `json:"weightUnknownLots"`
-	AverageLotPrice     string         `json:"aveLotPrice"`
+// CartItems is the actual items in the StoreCart plus totals and other metadata
+type CartItems struct {
+	Items               []CartItemDetail `json:"items"`
+	Superlots           []string         `json:"superlots"`
+	TotalItems          int              `json:"totalItems"`
+	TotalLots           int              `json:"totalLots"`
+	TotalPrice          string           `json:"totalPrice"`
+	TotalNativePrice    string           `json:"totalNativePrice"`
+	TotalWarnings       int              `json:"totalWarnings"`
+	TotalNativePriceRaw string           `json:"totalNativePriceRaw"`
+	TotalWeightGrams    string           `json:"totalWeightGrams"`
+	TotalWeightOunces   string           `json:"totalWeightOunces"`
+	WeightUnknownLots   int              `json:"weightUnknownLots"`
+	AverageLotPrice     string           `json:"aveLotPrice"`
 }
 
-type cartItemFull struct {
+// CartItemDetail provides detailed information about an item in a shopping cart
+type CartItemDetail struct {
 	ItemName                      string  `json:"itemName"`
 	InventoryDescription          string  `json:"invDescription"`
 	InventoryID                   int     `json:"invID"`
@@ -106,16 +118,32 @@ type cartItemFull struct {
 	TotalNativeSalePrice          string  `json:"totalNativeSalePrice"`
 }
 
-func addToCart(sid string, itemArray []cartItem) error {
-	_, err := getAddToCartQuery(sid, itemArray)
+// AddToCart is used to add a list of items to a user's cart
+func AddToCart(sid string, itemArray []CartItemSimple) (*AddToCartResponse, error) {
+	q, err := getAddToCartQuery(sid, itemArray)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	url := cloneBase + "/cart/add.ajax"
+	resp, err := http.Post(url, "application/x-www-form-urlencoded; charset=UTF-8", strings.NewReader(q))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-	return nil
+	var buf bytes.Buffer
+	buf.ReadFrom(resp.Body)
+	fmt.Println(buf.String())
+	return decodeCartReturn(ioutil.NopCloser(strings.NewReader(buf.String())))
 }
 
-func getAddToCartQuery(sid string, itemArray []cartItem) (string, error) {
+func decodeCartReturn(r io.ReadCloser) (*AddToCartResponse, error) {
+	defer r.Close()
+	retVal := &AddToCartResponse{}
+	return retVal, json.NewDecoder(r).Decode(retVal)
+}
+
+func getAddToCartQuery(sid string, itemArray []CartItemSimple) (string, error) {
 	values := url.Values{}
 	data, err := json.Marshal(itemArray)
 	if err != nil {
