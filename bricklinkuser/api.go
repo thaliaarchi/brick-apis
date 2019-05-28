@@ -35,12 +35,28 @@ func NewClient(cred *credentials.BrickLinkUser) (*Client, error) {
 }
 
 func (c *Client) Login() error {
-	_, err := c.client.PostForm(renovateBase+"/loginandout.ajax", url.Values{
+	resp, err := c.client.PostForm(renovateBase+"/loginandout.ajax", url.Values{
 		"userid":          {c.credentials.Username},
 		"password":        {c.credentials.Password},
 		"keepme_loggedin": {"true"},
 	})
-	return err
+	return getError(resp, err)
+}
+
+func getError(resp *http.Response, err error) error {
+	if resp == nil || resp.Body == nil || err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	l := &LoginReturn{}
+	if err := json.NewDecoder(resp.Body).Decode(l); err != nil {
+		return err
+	}
+	if l.ReturnCode != 0 {
+		return fmt.Errorf("Error logging in: %s", l.ReturnMessage)
+	}
+	return nil
 }
 
 func (c *Client) GetWantedList(id int64) (*WantedListResults, error) {
