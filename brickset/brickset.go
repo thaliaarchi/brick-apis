@@ -33,10 +33,6 @@ func (c *Client) makeRequest(method string, body string, result interface{}) err
 	if err != nil {
 		return err
 	}
-	// for debugging. Remove
-	//var buf bytes.Buffer
-	//buf.ReadFrom(resp.Body)
-	//fmt.Println(buf.String())
 	defer resp.Body.Close()
 
 	return xml.NewDecoder(resp.Body).Decode(result)

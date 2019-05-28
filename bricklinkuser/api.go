@@ -2,7 +2,6 @@ package bricklinkuser
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -54,8 +53,8 @@ func getError(resp *http.Response, err error) error {
 	if err := json.NewDecoder(resp.Body).Decode(l); err != nil {
 		return err
 	}
-	if l.ReturnCode != 0 && l.ReturnMessage != "" {
-		return errors.New(l.ReturnMessage)
+	if l.ReturnCode != 0 {
+		return fmt.Errorf("Error logging in: %s", l.ReturnMessage)
 	}
 	return nil
 }
