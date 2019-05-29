@@ -2,6 +2,7 @@ package bricklinkuser
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/url"
 )
@@ -119,7 +120,8 @@ func (c *Client) AddToCart(sid string, itemArray []CartItemSimple) (*AddToCartRe
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.client.PostForm(cloneBase+"/cart/add.ajax", q)
+	url := fmt.Sprintf("https://%s/ajax/clone/cart/add.ajax", getHost("www"))
+	resp, err := c.client.PostForm(url, q)
 	if err != nil {
 		return nil, err
 	}

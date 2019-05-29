@@ -5,12 +5,12 @@ import "fmt"
 // https://www.bricklink.com/ajax/clone/search/searchproduct.ajax?q=75159&st=0&cond=&brand=1000&type=&cat=&yf=0&yt=0&loc=&reg=0&ca=0&ss=&pmt=&nmp=0&color=-1&min=0&max=0&minqty=0&nosuperlot=1&incomplete=0&showempty=1&rpp=25&pi=1&ci=0
 
 func (c *Client) SearchProduct() (*SearchProduct, error) {
-	url := fmt.Sprintf("%s/search/searchproduct.ajax", cloneBase) // params TBD
-	var searchProduct SearchProduct
-	if err := c.doGet(url, &searchProduct); err != nil {
+	url := fmt.Sprintf("https://%s/ajax/clone/search/searchproduct.ajax", getHost("www")) // params TBD
+	var r SearchProduct
+	if err := c.doGet(url, &r); err != nil {
 		return nil, err
 	}
-	return &searchProduct, checkResponse(searchProduct.ReturnCode, searchProduct.ReturnMessage)
+	return &r, checkResponse(r.ReturnCode, r.ReturnMessage)
 }
 
 type SearchProduct struct {
@@ -89,12 +89,12 @@ const (
 // This API is called when clicking on an item in a store to show the details modal.
 // The type information is currently incomplete and no examples have been found using the URL parameter wantedMoreArrayID.
 func (c *Client) GetStoreItem(invID, storeID, wantedListArrayID string) (*StoreItem, error) {
-	url := fmt.Sprintf("%s/store/item.ajax?invID=%s&sid=%s&wantedMoreArrayID=%s", cloneStoreBase, invID, storeID, wantedListArrayID)
-	var storeItem StoreItem
-	if err := c.doGet(url, &storeItem); err != nil {
+	url := fmt.Sprintf("https://%s/ajax/clone/store/item.ajax?invID=%s&sid=%s&wantedMoreArrayID=%s", getHost("store"), invID, storeID, wantedListArrayID)
+	var r StoreItem
+	if err := c.doGet(url, &r); err != nil {
 		return nil, err
 	}
-	return &storeItem, checkResponse(storeItem.ReturnCode, storeItem.ReturnMessage)
+	return &r, checkResponse(r.ReturnCode, r.ReturnMessage)
 }
 
 type StoreItem struct {

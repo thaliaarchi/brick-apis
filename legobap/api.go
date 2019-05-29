@@ -59,18 +59,18 @@ type ProductInformation struct {
 }
 
 type Brick struct {
-	ItemNo               int64              `json:"ItemNo"`
+	ItemNo               int                `json:"ItemNo"`
 	ItemDescription      string             `json:"ItemDescr"`
 	ColorLikeDescription string             `json:"ColourLikeDescr"`
 	ColorDescription     string             `json:"ColourDescr"`
 	MaingroupDescription string             `json:"MaingroupDescr"`
 	Asset                string             `json:"Asset"`
-	MaxQty               int64              `json:"MaxQty"`
+	MaxQty               int                `json:"MaxQty"`
 	IP                   bool               `json:"Ip"`
 	Price                float64            `json:"Price"`
 	CurrencyID           string             `json:"CId"`
-	SQty                 int64              `json:"SQty"`
-	DesignID             int64              `json:"DesignId"`
+	SQty                 int                `json:"SQty"`
+	DesignID             int                `json:"DesignId"`
 	PriceStr             string             `json:"PriceStr"`
 	PriceWithTaxStr      string             `json:"PriceWithTaxStr"`
 	ItemUnavailable      bool               `json:"ItemUnavailable"`

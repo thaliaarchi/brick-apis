@@ -33,32 +33,30 @@ func createMID() string {
 	return strings.ToLower(mid)
 }
 
-// getBLHost returns the host URL for a given type.
+// getHost returns the host URL for a given type.
 // Converted from blUtil.getBLHost in jslegacy.
-func getBLHost(hostType string) string {
-	// JS would override with values from blo_host variable, but I cannot find those values
-	host := "www.bricklink.com"
+func getHost(hostType string) string {
 	switch hostType {
 	case "www", "alpha":
-		host = "www.bricklink.com"
+		return "www.bricklink.com"
 	case "img":
-		host = "img.bricklink.com"
+		return "img.bricklink.com"
 	case "static":
-		host = "static.bricklink.com"
+		return "static.bricklink.com"
 	case "store":
-		host = "store.bricklink.com"
+		return "store.bricklink.com"
 	}
-	return host
+	return "www.bricklink.com"
 }
 
 // Converted from blURL.getCatalogItemPageURL in jslegacy.
 func getCatalogItemPageURL(itemID int) string {
-	return fmt.Sprintf("//%s/v2/catalog/catalogitem.page?id=%d", getBLHost("www"), itemID)
+	return fmt.Sprintf("//%s/v2/catalog/catalogitem.page?id=%d", getHost("www"), itemID)
 }
 
 // Converted from blURL.getCatalogItemPageURLWithColor in jslegacy.
 func getCatalogItemPageURLWithColor(itemID, colorID int) string {
-	return fmt.Sprintf("//%s/v2/catalog/catalogitem.page?id=%d&idColor=%d", getBLHost("www"), itemID, colorID)
+	return fmt.Sprintf("//%s/v2/catalog/catalogitem.page?id=%d&idColor=%d", getHost("www"), itemID, colorID)
 }
 
 // Converted from blURL.getCatalogItemPageURLByItemNo in jslegacy.
@@ -67,37 +65,37 @@ func getCatalogItemPageURLByItemNo(itemType rune, itemNo string, itemSeq int) st
 	if itemType == 'S' || itemType == 'I' || itemType == 'O' {
 		seq = "-" + strconv.Itoa(itemSeq)
 	}
-	return fmt.Sprintf("//%s/v2/catalog/catalogitem.page?%c=%s%s", getBLHost("www"), itemType, itemNo, seq)
+	return fmt.Sprintf("//%s/v2/catalog/catalogitem.page?%c=%s%s", getHost("www"), itemType, itemNo, seq)
 }
 
 // Converted from blURL.getCatalogItemsForSalePageURL in jslegacy.
 func getCatalogItemsForSalePageURL(itemID, colorID int) string {
-	return fmt.Sprintf("//%s/v2/catalog/catalogitem.page?id=%d&idColor=%d#T=S", getBLHost("www"), itemID, colorID)
+	return fmt.Sprintf("//%s/v2/catalog/catalogitem.page?id=%d&idColor=%d#T=S", getHost("www"), itemID, colorID)
 }
 
 // Converted from blURL.getNewsPageURL in jslegacy.
 func getNewsPageURL(msgID int) string {
-	return fmt.Sprintf("//%s/v2/community/newsview.page?msgid=%d", getBLHost("www"), msgID)
+	return fmt.Sprintf("//%s/v2/community/newsview.page?msgid=%d", getHost("www"), msgID)
 }
 
 // Converted from blURL.getStoreURL and equivalent to blURL.getNewStoreURL in jslegacy.
 func getStoreURL(sellerUsername string) string {
-	return fmt.Sprintf("//%s/%s", getBLHost("store"), sellerUsername)
+	return fmt.Sprintf("//%s/%s", getHost("store"), sellerUsername)
 }
 
 // Converted from blURL.getStoreURLByID in jslegacy.
 func getStoreURLByID(sellerUserID int) string {
-	return fmt.Sprintf("//%s/store/home.page?sid=%d", getBLHost("www"), sellerUserID)
+	return fmt.Sprintf("//%s/store/home.page?sid=%d", getHost("www"), sellerUserID)
 }
 
 // Converted from blURL.getStoreInvURL in jslegacy.
 func getStoreInvURL(sellerUsername string, invID int) string {
-	return fmt.Sprintf("//%s/%s?itemID=%d", getBLHost("store"), sellerUsername, invID)
+	return fmt.Sprintf("//%s/%s?itemID=%d", getHost("store"), sellerUsername, invID)
 }
 
 // Converted from blURL.getStoreInvURLByID in jslegacy.
 func getStoreInvURLByID(sellerUserID, invID int) string {
-	return fmt.Sprintf("//%s/store/home.page?sid=%d&itemID=%d", getBLHost("www"), sellerUserID, invID)
+	return fmt.Sprintf("//%s/store/home.page?sid=%d&itemID=%d", getHost("www"), sellerUserID, invID)
 }
 
 type storeOptions struct {
@@ -147,7 +145,7 @@ func getStoreWLURL(sellerUsername string, wantedListIDs []int) string {
 	if err != nil {
 		fmt.Println(err)
 	}
-	return fmt.Sprintf("//%s/%s#/shop?o=%s", getBLHost("store"), sellerUsername, string(bytes))
+	return fmt.Sprintf("//%s/%s#/shop?o=%s", getHost("store"), sellerUsername, string(bytes))
 }
 
 func sliceJoin(slice []int, delim string) string {
@@ -163,38 +161,38 @@ func sliceJoin(slice []int, delim string) string {
 
 // Converted from blURL.getStoreCartURL in jslegacy.
 func getStoreCartURL(sellerUsername string) string {
-	return fmt.Sprintf("//%s/%s#/cart", getBLHost("store"), sellerUsername)
+	return fmt.Sprintf("//%s/%s#/cart", getHost("store"), sellerUsername)
 }
 
 // Converted from blURL.getStoreCheckoutURL in jslegacy.
 func getStoreCheckoutURL(sellerUsername string) string {
-	return fmt.Sprintf("//%s/%s#/checkout", getBLHost("store"), sellerUsername)
+	return fmt.Sprintf("//%s/%s#/checkout", getHost("store"), sellerUsername)
 }
 
 // Converted from blURL.getStoreCartURLByID in jslegacy.
 func getStoreCartURLByID(sellerUserID int) string {
-	return fmt.Sprintf("//%s/store/home.page?sid=%d#/cart", getBLHost("www"), sellerUserID)
+	return fmt.Sprintf("//%s/store/home.page?sid=%d#/cart", getHost("www"), sellerUserID)
 }
 
 // Acceptable values for flagSize are 'S', 'M', and 'L'
 // Generalized from blURL.getCountryFlagSmallURL and blURL.getCountryFlagMediumURL in jslegacy.
 func getCountryFlagURL(countryID string, flagSize rune) string {
-	return fmt.Sprintf("//%s/Images/Flags%c/%s.gif", getBLHost("img"), flagSize, countryID)
+	return fmt.Sprintf("//%s/Images/Flags%c/%s.gif", getHost("img"), flagSize, countryID)
 }
 
 // Converted from blURL.getStoreFeedbackURL in jslegacy.
 func getStoreFeedbackURL(sellerUsername string) string {
-	return fmt.Sprintf("//%s/store/home.page?p=%s#/feedback", getBLHost("www"), sellerUsername)
+	return fmt.Sprintf("//%s/store/home.page?p=%s#/feedback", getHost("www"), sellerUsername)
 }
 
 // Converted from blURL.getLoginURL in jslegacy.
 func getLoginURL(loginTo string) string {
-	return fmt.Sprintf("https://%s/v2/login.page?logInTo=%s", getBLHost("www"), url.QueryEscape(loginTo))
+	return fmt.Sprintf("https://%s/v2/login.page?logInTo=%s", getHost("www"), url.QueryEscape(loginTo))
 }
 
 // Converted from blURL.getDefaultStoreLogoURL in jslegacy.
 func getDefaultStoreLogoURL() string {
-	return fmt.Sprintf("//%s/clone/img/store-default-image.png", getBLHost("static"))
+	return fmt.Sprintf("//%s/clone/img/store-default-image.png", getHost("static"))
 }
 
 // Converted from blURL.getFeedbackIconUrl in jslegacy.
@@ -228,7 +226,7 @@ func getFeedbackIconURL(score int) string {
 
 // Converted from blc_GlobalCart.retrieveCartInfo
 func (c *Client) GetGlobalCart() (*CartInfo, error) {
-	url := fmt.Sprintf("https://%s/ajax/renovate/getglobalcart.ajax", getBLHost("www"))
+	url := fmt.Sprintf("https://%s/ajax/renovate/getglobalcart.ajax", getHost("www"))
 	var cartInfo CartInfo
 	if err := c.doGet(url, &cartInfo); err != nil {
 		return nil, err
@@ -251,9 +249,9 @@ type StoreList struct {
 	StoreName       string  `json:"store_name"`
 	Username        string  `json:"username"`
 	CountryID       string  `json:"countryid"`
-	FeedbackScore   int64   `json:"feedback_score"`
+	FeedbackScore   int     `json:"feedback_score"`
 	InstantCheckout bool    `json:"instantCheckout"`
-	LotCount        int64   `json:"lotcnt"`
+	LotCount        int     `json:"lotcnt"`
 	DispPrice       float64 `json:"fDispPrice"`
 	TotalPrice      string  `json:"strTotPrice"`
 	Key             string  `json:"key"`
@@ -263,7 +261,7 @@ type StoreList struct {
 func (c *Client) GetGlobalCartCheckoutInfo(sellerUserID int, key string) (*CheckoutInfo, error) {
 	// Single store: (also conditions.estShippingAndHandling)
 	// { action: 'conditions', sid: store.sellerid, key: store.key, checkPaypal: 0 }
-	url := fmt.Sprintf("https://%s/ajax/clone/store/preparecheckout.ajax?action=conditions&sid=%d&key=%s&checkPaypal=0", getBLHost("www"), sellerUserID, key)
+	url := fmt.Sprintf("https://%s/ajax/clone/store/preparecheckout.ajax?action=conditions&sid=%d&key=%s&checkPaypal=0", getHost("www"), sellerUserID, key)
 	var checkoutInfo CheckoutInfo
 	if err := c.doGetAndSave(url, checkoutInfo, "checkout-info.json"); err != nil {
 		return nil, err
@@ -281,14 +279,14 @@ type CheckoutInfo struct {
 
 type A struct {
 	Sellers        []SellerConditions `json:"sellers"`
-	ReturnCode     int64              `json:"returnCode"`
+	ReturnCode     int                `json:"returnCode"`
 	ReturnMessage  string             `json:"returnMessage"`
-	ErrorTicket    int64              `json:"errorTicket"`
-	ProcessingTime int64              `json:"procssingTime"`
+	ErrorTicket    int                `json:"errorTicket"`
+	ProcessingTime int                `json:"procssingTime"`
 }
 
 type SellerConditions struct {
-	SellerID   int64      `json:"sid"`
+	SellerID   int        `json:"sid"`
 	Conditions Conditions `json:"conditions"`
 }
 
@@ -335,15 +333,15 @@ type OrderRestriction struct {
 }
 
 type TargetShippingMethod struct {
-	ID                  int64                `json:"id"`
+	ID                  int                  `json:"id"`
 	Name                string               `json:"name"`
-	UnitType            int64                `json:"unitType"`
+	UnitType            int                  `json:"unitType"`
 	APIMethod           bool                 `json:"apiMethod"`
 	PackageRestrictions []PackageRestriction `json:"packageRestrictions"`
 }
 
 type PackageRestriction struct {
-	Type int64  `json:"type"`
+	Type int    `json:"type"`
 	Arg1 string `json:"arg1"`
 	Arg2 string `json:"arg2"`
 	Arg3 string `json:"arg3"`

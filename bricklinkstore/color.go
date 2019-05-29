@@ -18,7 +18,7 @@ type colorsResponse struct {
 }
 
 // GetColor retrieves information about a specific color.
-func (c *Client) GetColor(id int64) (*Color, error) {
+func (c *Client) GetColor(id int) (*Color, error) {
 	url := fmt.Sprintf("/colors/%d", id)
 	var color colorResponse
 	if err := c.doGet(url, &color); err != nil {
@@ -34,7 +34,7 @@ type colorResponse struct {
 
 // Color contains information about a color in the BrickLink catalog.
 type Color struct {
-	ColorID   int64     `json:"color_id"`   // ID of the color
+	ColorID   int       `json:"color_id"`   // ID of the color
 	ColorName string    `json:"color_name"` // The name of the color
 	ColorCode string    `json:"color_code"` // HTML color code of this color
 	ColorType ColorType `json:"color_type"` // The name of the color group to which this color belongs

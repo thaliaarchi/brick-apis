@@ -39,7 +39,7 @@ type ordersResponse struct {
 }
 
 // GetOrder retrieves the details of a specific order.
-func (c *Client) GetOrder(id int64) (*Order, error) {
+func (c *Client) GetOrder(id int) (*Order, error) {
 	url := fmt.Sprintf("/orders/%d", id)
 	var order orderResponse
 	if err := c.doGet(url, &order); err != nil {
@@ -55,7 +55,7 @@ type orderResponse struct {
 
 // GetOrderItems retrieves a list of items for the specified order.
 // Returns a list of batches, each containing a list of items.
-func (c *Client) GetOrderItems(id int64) ([][]OrderItem, error) {
+func (c *Client) GetOrderItems(id int) ([][]OrderItem, error) {
 	url := fmt.Sprintf("/orders/%d/items", id)
 	var items orderItemsResponse
 	if err := c.doGet(url, &items); err != nil {
@@ -71,22 +71,22 @@ type orderItemsResponse struct {
 
 // Order contains details for an order.
 type Order struct {
-	OrderID           int64       `json:"order_id"`            // Unique identifier for this order for internal use
+	OrderID           int         `json:"order_id"`            // Unique identifier for this order for internal use
 	DateOrdered       time.Time   `json:"date_ordered"`        // The time the order was created
 	DateStatusChanged time.Time   `json:"date_status_changed"` // The time the order status was last modified
 	SellerName        string      `json:"seller_name"`         // The username of the seller in BL
 	StoreName         string      `json:"store_name"`          // The store name displayed on BL store pages
 	BuyerName         string      `json:"buyer_name"`          // The username of the buyer in BL
 	BuyerEmail        string      `json:"buyer_email"`         // E-mail address of the buyer
-	BuyerOrderCount   int64       `json:"buyer_order_count"`   // Total count of all orders placed by the buyer in the seller's store. Includes the order just placed and also purged orders
+	BuyerOrderCount   int         `json:"buyer_order_count"`   // Total count of all orders placed by the buyer in the seller's store. Includes the order just placed and also purged orders
 	RequireInsurance  bool        `json:"require_insurance"`   // Indicates whether the buyer requests insurance for this order
 	Status            OrderStatus `json:"status"`              // The status of an order. Available statuses: http://www.bricklink.com/help.asp?helpID=41
 	IsInvoiced        bool        `json:"is_invoiced"`         // Indicates whether the order invoiced
 	IsFiled           bool        `json:"is_filed"`            // Indicates whether the order is filed
 	DriveThruSent     bool        `json:"drive_thru_sent"`     // Indicates whether "Thank You, Drive Thru!" email has been sent
 	Remarks           string      `json:"remarks,omitempty"`   // User remarks for this order
-	TotalCount        int64       `json:"total_count"`         // The total number of items included in this order
-	UniqueCount       int64       `json:"unique_count"`        // The unique number of items included in this order
+	TotalCount        int         `json:"total_count"`         // The total number of items included in this order
+	UniqueCount       int         `json:"unique_count"`        // The unique number of items included in this order
 	TotalWeight       float64     `json:"total_weight,string"` // The total weight of the items ordered. It applies the seller's custom weight when present to override the catalog weight. 0 if the order includes at least one item without any weight information or incomplete set
 	Payment           Payment     `json:"payment"`             // Information related to the payment of this order
 	Shipping          Shipping    `json:"shipping"`            // Information related to the shipping. API name data normalization: http://apidev.bricklink.com/redmine/boards/1/topics/4
@@ -105,7 +105,7 @@ type Payment struct {
 // Shipping contains shipping and tracking information for an order.
 type Shipping struct {
 	Method          string    `json:"method"`        // Shipping method name
-	MethodID        int64     `json:"method_id"`     // Shipping method ID
+	MethodID        int       `json:"method_id"`     // Shipping method ID
 	TrackingNumbers string    `json:"tracking_no"`   // Tracking numbers for the shipping
 	TrackingLink    string    `json:"tracking_link"` // URL for tracking the shipping. API-only field. It is not shown on the BrickLink pages
 	DateShipped     time.Time `json:"date_shipped"`  // Shipping date. API-only field. It is not shown on the BrickLink pages
@@ -149,11 +149,11 @@ type Cost struct {
 
 // OrderItem is an item contained in an order
 type OrderItem struct {
-	InventoryID           int64        `json:"inventory_id"`                 // The ID of the inventory that includes the item
+	InventoryID           int          `json:"inventory_id"`                 // The ID of the inventory that includes the item
 	Item                  CatalogItem  `json:"item"`                         // An object representation of the item
-	ColorID               int64        `json:"color_id"`                     // The ID of the color of the item
+	ColorID               int          `json:"color_id"`                     // The ID of the color of the item
 	ColorName             string       `json:"color_name"`                   // Color name of the item
-	Quantity              int64        `json:"quantity"`                     // The number of items purchased in this order
+	Quantity              int          `json:"quantity"`                     // The number of items purchased in this order
 	NewOrUsed             NewOrUsed    `json:"new_or_used"`                  // Indicates whether the item is new or used (N: New, U: Used)
 	Completeness          Completeness `json:"completeness,omitempty"`       // Indicates whether the set is complete or incomplete. This value is valid only for SET type. (C: Complete, B: Incomplete, S: Sealed)
 	UnitPrice             float64      `json:"unit_price,string"`            // The original price of this item per sale unit
