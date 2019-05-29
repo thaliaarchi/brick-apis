@@ -4,13 +4,33 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/url"
 	"strconv"
+	"strings"
+	"time"
 )
 
 // Converted from https://static.bricklink.com/_cache/jslegacy.2ec6747ecd9c6e44b6ac7e545e3f0457.js on 2019-05-25
 
+// Converted from blUtil.refreshSession in jslegacy
 func refreshSession() {
+}
+
+// Converted from blUtil.getRand2Byte in jslegacy
+func getRand2Byte() string {
+	return strconv.FormatInt(int64((rand.Float64()+1.0)*0x10000), 16)[1:]
+}
+
+// Converted from blUtil.createMID in jslegacy
+func createMID() string {
+	ms := time.Now().UnixNano() / 1000000
+	if ms < 0 {
+		ms = -ms
+	}
+	msStr := (strconv.FormatInt(ms, 16) + "0000000000000000")[0:16]
+	mid := msStr + "-" + getRand2Byte() + getRand2Byte() + getRand2Byte() + getRand2Byte()
+	return strings.ToLower(mid)
 }
 
 // getBLHost returns the host URL for a given type.
@@ -206,6 +226,16 @@ func getFeedbackIconURL(score int) string {
 	return fmt.Sprintf("//static.bricklink.com/clone/img/feedback_%s.png", index)
 }
 
+// Converted from blc_GlobalCart.retrieveCartInfo
+func (c *Client) GetGlobalCart() (*CartInfo, error) {
+	url := fmt.Sprintf("https://%s/ajax/renovate/getglobalcart.ajax", getBLHost("www"))
+	var cartInfo CartInfo
+	if err := c.doGet(url, &cartInfo); err != nil {
+		return nil, err
+	}
+	return &cartInfo, checkResponse(cartInfo.ReturnCode, cartInfo.ReturnMessage)
+}
+
 type CartInfo struct {
 	List            []StoreList `json:"list"`
 	TotalStoreCount int         `json:"total_store_cnt"`
@@ -229,12 +259,142 @@ type StoreList struct {
 	Key             string  `json:"key"`
 }
 
-// Converted from blc_GlobalCart.retrieveCartInfo
-func (c *Client) RetrieveCartInfo() (*CartInfo, error) {
-	url := fmt.Sprintf("https://%s/ajax/renovate/getglobalcart.ajax", getBLHost("www"))
-	var cartInfo CartInfo
-	if err := c.doGet(url, &cartInfo); err != nil {
+// Converted from blc_GlobalCart.getCheckoutInfo
+func (c *Client) GetGlobalCartCheckoutInfo(sellerUserID int, key string) (*CheckoutInfo, error) {
+	// Single store: (also conditions.estShippingAndHandling)
+	// { action: 'conditions', sid: store.sellerid, key: store.key, checkPaypal: 0 }
+	url := fmt.Sprintf("https://%s/ajax/clone/store/preparecheckout.ajax?action=conditions&sid=%d&key=%s&checkPaypal=0", getBLHost("www"), sellerUserID, key)
+	var checkoutInfo CheckoutInfo
+	if err := c.doGetAndSave(url, checkoutInfo, "checkout-info.json"); err != nil {
 		return nil, err
 	}
-	return &cartInfo, checkResponse(cartInfo.ReturnCode, cartInfo.ReturnMessage)
+	return &checkoutInfo, nil
+}
+
+type CheckoutInfo struct {
+	Conditions     Conditions `json:"conditions"`
+	ReturnCode     int        `json:"returnCode"`
+	ReturnMessage  string     `json:"returnMessage"`
+	ErrorTicket    int        `json:"errorTicket"`
+	ProcessingTime int        `json:"procssingTime"`
+}
+
+type A struct {
+	Sellers        []SellerConditions `json:"sellers"`
+	ReturnCode     int64              `json:"returnCode"`
+	ReturnMessage  string             `json:"returnMessage"`
+	ErrorTicket    int64              `json:"errorTicket"`
+	ProcessingTime int64              `json:"procssingTime"`
+}
+
+type SellerConditions struct {
+	SellerID   int64      `json:"sid"`
+	Conditions Conditions `json:"conditions"`
+}
+
+type Conditions struct {
+	Error                              ConditionsError      `json:"error"`
+	TargetShippingMethod               TargetShippingMethod `json:"targetShippingMethod"`
+	EstimatedShippingAndHandlingNative string               `json:"estShippingAndHandlingNative"`
+	CostType                           int                  `json:"costType"`
+	HasShippingCost                    bool                 `json:"hasShippingCost"`
+	ShippingLocation                   string               `json:"shippingLocation"`
+	Domestic                           bool                 `json:"domestic"`
+	OnlyMethod                         bool                 `json:"onlyMethod"`
+	OrderRestriction                   OrderRestriction     `json:"orderRestriction"`
+	ShowSalesTax                       bool                 `json:"showSalesTax"`
+	SalesTaxFinal                      bool                 `json:"salesTaxFinal"`
+	BatchID                            int                  `json:"batchID"`
+	BatchNum                           int                  `json:"batchNum"`
+	BatchTotalNativePrice              string               `json:"batchTotalNativePrice"`
+	OrderItemTotalNativePrice          string               `json:"orderItemTotalNativePrice"`
+	AvgLotNativePrice                  string               `json:"avgLotNativePrice"`
+	OrderTotalNativePrice              string               `json:"orderTotalNativePrice"`
+	BatchTotalPrice                    string               `json:"batchTotalPrice"`
+	OrderTotalPrice                    string               `json:"orderTotalPrice"`
+	OrderItemTotalPrice                string               `json:"orderItemTotalPrice"`
+	AvgLotPrice                        string               `json:"avgLotPrice"`
+	LoggedIn                           bool                 `json:"loggedIn"`
+	EmailConfirmed                     bool                 `json:"emailConfirmed"`
+	SalesTaxNative                     string               `json:"salesTaxNative"`
+	SalesTax                           string               `json:"salesTax"`
+}
+
+type ConditionsError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type OrderRestriction struct {
+	MinBuyMet            bool   `json:"minBuyMet"`
+	AvgBuyMet            bool   `json:"avgBuyMet"`
+	MinBuyShortageNative string `json:"minBuyShortageNative"`
+	AvgBuyShortageNative string `json:"avgBuyShortageNative"`
+	MinBuyShortage       string `json:"minBuyShortage"`
+	AvgBuyShortage       string `json:"avgBuyShortage"`
+}
+
+type TargetShippingMethod struct {
+	ID                  int64                `json:"id"`
+	Name                string               `json:"name"`
+	UnitType            int64                `json:"unitType"`
+	APIMethod           bool                 `json:"apiMethod"`
+	PackageRestrictions []PackageRestriction `json:"packageRestrictions"`
+}
+
+type PackageRestriction struct {
+	Type int64  `json:"type"`
+	Arg1 string `json:"arg1"`
+	Arg2 string `json:"arg2"`
+	Arg3 string `json:"arg3"`
+}
+
+// blc_CatalogItem.getItemTypeName
+func getItemTypeName(itemType rune, isPlural bool) string {
+	switch itemType {
+	case 'P', 'p':
+		if isPlural {
+			return "Parts"
+		}
+		return "Part"
+	case 'S', 's':
+		if isPlural {
+			return "Sets"
+		}
+		return "Set"
+	case 'M', 'm':
+		if isPlural {
+			return "Minifigs"
+		}
+		return "Minifig"
+	case 'G', 'g':
+		return "Gear"
+	case 'I', 'i':
+		if isPlural {
+			return "Instructions"
+		}
+		return "Instruction"
+	case 'O', 'o':
+		if isPlural {
+			return "Original Boxes"
+		}
+		return "Original Box"
+	case 'C', 'c':
+		if isPlural {
+			return "Catalogs"
+		}
+		return "Catalog"
+	case 'B', 'b':
+		if isPlural {
+			return "Books"
+		}
+		return "Book"
+	case 'U', 'u':
+		if isPlural {
+			return "Custom Items"
+		}
+		return "Custom Item"
+	default:
+		return ""
+	}
 }

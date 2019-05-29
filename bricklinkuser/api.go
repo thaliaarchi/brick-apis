@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/andrewarchi/brick-apis/credentials"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -20,26 +19,43 @@ const (
 )
 
 type Client struct {
-	client      *http.Client
-	credentials credentials.BrickLinkUser
+	client *http.Client
 }
 
-func NewClient(cred *credentials.BrickLinkUser) (*Client, error) {
+func NewClient() (*Client, error) {
 	jar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &Client{&http.Client{Jar: jar}, *cred}, nil
+	return &Client{&http.Client{Jar: jar}}, nil
 }
 
-func (c *Client) Login() error {
-	resp, err := c.client.PostForm(renovateBase+"/loginandout.ajax", url.Values{
-		"userid":          {c.credentials.Username},
-		"password":        {c.credentials.Password},
+func (c *Client) Login(username, password string) error {
+	return c.loginAndOut(url.Values{
+		"userid":          {username},
+		"password":        {password},
 		"keepme_loggedin": {"true"},
 	})
+}
+
+func (c *Client) Logout() error {
+	return c.loginAndOut(url.Values{
+		"do_logout": {"true"},
+	})
+}
+
+// loginReturn is returned by the Login method
+type loginReturn struct {
+	ReturnCode     int    `json:"returnCode"`
+	ReturnMessage  string `json:"returnMessage"`
+	ErrorTicket    int    `json:"errorTicket"`
+	ProcessingTime int    `json:"procssingTime"`
+}
+
+func (c *Client) loginAndOut(formValues url.Values) error {
+	resp, err := c.client.PostForm(renovateBase+"/loginandout.ajax", formValues)
 	return getError(resp, err)
 }
 
@@ -49,7 +65,7 @@ func getError(resp *http.Response, err error) error {
 	}
 	defer resp.Body.Close()
 
-	l := &LoginReturn{}
+	l := &loginReturn{}
 	if err := json.NewDecoder(resp.Body).Decode(l); err != nil {
 		return err
 	}

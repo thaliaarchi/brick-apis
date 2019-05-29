@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/andrewarchi/brick-apis/credentials"
 )
 
 type LegoBAPClient struct {
-	credentials *credentials.LegoBAP
+	age     int
+	country CountryCode
 }
 
-func NewClient(cred *credentials.LegoBAP) *LegoBAPClient {
-	return &LegoBAPClient{cred}
+func NewClient(age int, country CountryCode) *LegoBAPClient {
+	return &LegoBAPClient{age, country}
 }
 
 func (c *LegoBAPClient) GetPart(id string) (*ProductInformation, error) {
@@ -40,7 +39,7 @@ func (c *LegoBAPClient) doGet(url string, v interface{}) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	cookie := fmt.Sprintf(`csAgeAndCountry={"age":"%s","countrycode":"%s"}`, c.credentials.Age, c.credentials.CountryCode)
+	cookie := fmt.Sprintf(`csAgeAndCountry={"age":"%d","countrycode":"%s"}`, c.age, c.country)
 	request.Header.Add("Cookie", cookie)
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
@@ -100,6 +99,36 @@ type Product struct {
 	ItemNo      string `json:"ItemNo"`
 	Asset       string `json:"Asset"`
 }
+
+// CountryCode is used by LEGO Bricks & Pieces.
+type CountryCode string
+
+// Only these countries can purchase through Bricks & Pieces.
+const (
+	CountryCodeAU CountryCode = "AU" // Australia
+	CountryCodeAT CountryCode = "AT" // Austria
+	CountryCodeBE CountryCode = "BE" // Belgium
+	CountryCodeCA CountryCode = "CA" // Canada
+	CountryCodeCZ CountryCode = "CZ" // Czech Republic
+	CountryCodeDK CountryCode = "DK" // Denmark
+	CountryCodeFI CountryCode = "FI" // Finland
+	CountryCodeFR CountryCode = "FR" // France
+	CountryCodeDE CountryCode = "DE" // Germany
+	CountryCodeHU CountryCode = "HU" // Hungary
+	CountryCodeIE CountryCode = "IE" // Ireland
+	CountryCodeIT CountryCode = "IT" // Italy
+	CountryCodeLU CountryCode = "LU" // Luxembourg
+	CountryCodeNL CountryCode = "NL" // Netherlands
+	CountryCodeNZ CountryCode = "NZ" // New Zealand
+	CountryCodeNO CountryCode = "NO" // Norway
+	CountryCodePL CountryCode = "PL" // Poland
+	CountryCodePT CountryCode = "PT" // Portugal
+	CountryCodeES CountryCode = "ES" // Spain
+	CountryCodeSE CountryCode = "SE" // Sweden
+	CountryCodeCH CountryCode = "CH" // Switzerland
+	CountryCodeGB CountryCode = "GB" // United Kingdom
+	CountryCodeUS CountryCode = "US" // United States
+)
 
 /*
 CId:

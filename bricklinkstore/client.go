@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/andrewarchi/brick-apis/credentials"
 	"github.com/mrjones/oauth"
 )
 
@@ -19,9 +18,9 @@ type Client struct {
 }
 
 // NewClient constructs a client for the BrickLink store API.
-func NewClient(cred *credentials.BrickLinkStore) (*Client, error) {
-	consumer := oauth.NewConsumer(cred.ConsumerKey, cred.ConsumerSecret, oauth.ServiceProvider{})
-	accessToken := &oauth.AccessToken{Token: cred.Token, Secret: cred.TokenSecret}
+func NewClient(consumerKey, consumerSecret, token, tokenSecret string) (*Client, error) {
+	consumer := oauth.NewConsumer(consumerKey, consumerSecret, oauth.ServiceProvider{})
+	accessToken := &oauth.AccessToken{Token: token, Secret: tokenSecret}
 	client, err := consumer.MakeHttpClient(accessToken)
 	return &Client{client}, err
 }

@@ -207,11 +207,3 @@ type WantedListSummary struct {
 	Price          string `json:"price"`
 	PriceWarn      bool   `json:"priceWarn"`
 }
-
-// LoginReturn is returned by the Login method
-type LoginReturn struct {
-	ReturnCode     int    `json:"returnCode"`
-	ReturnMessage  string `json:"returnMessage"`
-	ErrorTicket    int    `json:"errorTicket"`
-	ProcessingTime int    `json:"procssingTime"`
-}

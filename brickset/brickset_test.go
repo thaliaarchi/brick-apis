@@ -8,10 +8,10 @@ import (
 )
 
 var (
-	apiKey   = os.Getenv("BRICKSET_APIKEY")
+	apiKey   = os.Getenv("BRICKSET_API_KEY")
 	username = os.Getenv("BRICKSET_USERNAME")
 	password = os.Getenv("BRICKSET_PASSWORD")
-	userHash = os.Getenv("BRICKSET_USERHASH")
+	userHash = os.Getenv("BRICKSET_USER_HASH")
 )
 
 func TestLogin(t *testing.T) {
@@ -35,7 +35,7 @@ func TestGetSet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Fatal(res)
+	t.Error(res)
 }
 
 func TestGetSets(t *testing.T) {
@@ -47,7 +47,7 @@ func TestGetSets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Fatal(res)
+	t.Error(res)
 }
 
 func TestDecodeLoginResponseXML(t *testing.T) {

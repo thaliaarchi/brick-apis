@@ -1,17 +1,19 @@
 package bricklinkstore
 
 import (
+	"os"
 	"testing"
+)
 
-	"github.com/andrewarchi/brick-apis/credentials"
+var (
+	consumerKey    = os.Getenv("BRICKLINK_STORE_CONSUMER_KEY")
+	consumerSecret = os.Getenv("BRICKLINK_STORE_CONSUMER_SECRET")
+	token          = os.Getenv("BRICKLINK_STORE_TOKEN")
+	tokenSecret    = os.Getenv("BRICKLINK_STORE_TOKEN_SECRET")
 )
 
 func TestColors(t *testing.T) {
-	cred, err := credentials.Read("../credentials.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	bl, err := NewClient(cred.BrickLinkStore)
+	bl, err := NewClient(consumerKey, consumerSecret, token, tokenSecret)
 	if err != nil {
 		t.Fatal(err)
 	}

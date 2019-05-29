@@ -8,22 +8,20 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/andrewarchi/brick-apis/credentials"
 )
 
 var (
-	username = os.Getenv("BRICKLINK_USERNAME")
-	password = os.Getenv("BRICKLINK_PASSWORD")
+	username = os.Getenv("BRICKLINK_USER_USERNAME")
+	password = os.Getenv("BRICKLINK_USER_PASSWORD")
 )
 
 func TestAddToCart(t *testing.T) {
 	t.SkipNow()
-	c, err := NewClient(&credentials.BrickLinkUser{Username: username, Password: password})
+	c, err := NewClient()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := c.Login(); err != nil {
+	if err := c.Login(username, password); err != nil {
 		t.Fatal(err)
 	}
 	t.Error(c.AddToCart("596847", []CartItemSimple{{ID: 170802686, Quantity: "1", SellerID: 596847, SourceType: 1}}))
