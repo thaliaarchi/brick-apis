@@ -7,28 +7,38 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/andrewarchi/brick-apis/bricklinkstore"
 	"github.com/andrewarchi/brick-apis/bricklinkuser"
-	"github.com/andrewarchi/brick-apis/credentials"
 	"github.com/andrewarchi/brick-apis/legobap"
 )
 
-func main() {
-	cred, err := credentials.Read("credentials.json")
-	if err != nil {
-		log.Fatal(err)
-	}
+var (
+	brickLinkStoreConsumerKey    = os.Getenv("BRICKLINK_STORE_CONSUMER_KEY")
+	brickLinkStoreConsumerSecret = os.Getenv("BRICKLINK_STORE_CONSUMER_SECRET")
+	brickLinkStoreToken          = os.Getenv("BRICKLINK_STORE_TOKEN")
+	brickLinkStoreTokenSecret    = os.Getenv("BRICKLINK_STORE_TOKEN_SECRET")
+	brickLinkUserUsername        = os.Getenv("BRICKLINK_USER_USERNAME")
+	brickLinkUserPassword        = os.Getenv("BRICKLINK_USER_PASSWORD")
+	bricksetAPIKey               = os.Getenv("BRICKSET_API_KEY")
+	bricksetUsername             = os.Getenv("BRICKSET_USERNAME")
+	bricksetPassword             = os.Getenv("BRICKSET_PASSWORD")
+	bricksetUserHash             = os.Getenv("BRICKSET_USER_HASH")
+	legoBAPAge                   = os.Getenv("LEGO_BAP_AGE")
+	legoBAPCountryCode           = os.Getenv("LEGO_BAP_COUNTRY_CODE")
+)
 
-	blUser, err := bricklinkuser.NewClient(cred.BrickLinkUser)
+func main() {
+	blUser, err := bricklinkuser.NewClient()
 	if err != nil {
 		log.Fatal(err)
 	}
-	blUser.Login()
+	blUser.Login(brickLinkUserUsername, brickLinkUserPassword)
 	reportOwnedWantedParts(blUser)
 
-	blStore, err := bricklinkstore.NewClient(cred.BrickLinkStore)
+	blStore, err := bricklinkstore.NewClient(brickLinkStoreConsumerKey, brickLinkStoreConsumerSecret, brickLinkStoreToken, brickLinkStoreTokenSecret)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,7 +58,8 @@ func main() {
 	items, err := blStore.GetOrderItems(11037590)
 	fmt.Println(items)
 
-	bap := legobap.NewClient(cred.Lego)
+	age, _ := strconv.Atoi(legoBAPAge)
+	bap := legobap.NewClient(age, legobap.CountryCode(legoBAPCountryCode))
 	fmt.Println(bap.GetPart("3024"))
 	fmt.Println(bap.GetSet("75192"))
 }
